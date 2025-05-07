@@ -17,7 +17,7 @@ class OpenStreetMapPage extends StatefulWidget {
 }
 
 class _OpenStreetMapPageState extends State<OpenStreetMapPage> {
-  LatLng _currentPosition = const LatLng(51.509364, -0.128928);
+  LatLng _currentPosition = const LatLng(28.2476758, 76.8136269);
   final MapController _mapController = MapController();
   String _address = '';
   final TextEditingController _searchController = TextEditingController();

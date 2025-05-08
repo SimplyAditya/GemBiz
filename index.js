@@ -3,6 +3,7 @@ import { sendOTP } from "./controllers/otpController.js";
 import { approveBusinessCategory, fetchPendingBusinessCategories } from "./controllers/businessCategories.js";
 import { approveBusinessCatalogue, fetchPendingBusinessCatalogues } from "./controllers/businessCatalogue.js";
 import { approveBusinessSeller, fetchBusinessSellers } from "./controllers/businessSellers.js";
+import { createUser } from "./controllers/authController.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get("/fetch-pending-business-catalogues", fetchPendingBusinessCatalogues);
 app.post("/approve-business-catalogue", approveBusinessCatalogue);
 app.get("/fetch-business-sellers", fetchBusinessSellers);
 app.post("/approve-business-seller", approveBusinessSeller);
+app.post("/create-user", createUser);
 
 
 app.post("/send-otp", sendOTP);

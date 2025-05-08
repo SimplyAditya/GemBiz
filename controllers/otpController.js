@@ -5,6 +5,14 @@ const generateOTP = () => {
   return otp;
 };
 
+export const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "no.reply.gembiz@gmail.com",
+    pass: "hwzdexslofmawpnh",
+  },
+});
+
 export const sendOTP = async (req, res) => {
   const { email } = req.body;
 
@@ -15,13 +23,7 @@ export const sendOTP = async (req, res) => {
   const otp = generateOTP();
   console.log(`OTP for ${email}: ${otp}`);
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: "no.reply.gembiz@gmail.com",
-      pass: "hwzdexslofmawpnh",
-    },
-  });
+
 
   const mailOptions = {
     from: "GemBiz Seller Application <no.reply.gembiz@gmail.com>",

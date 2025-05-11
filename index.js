@@ -1,5 +1,6 @@
 import express from "express";
 import { sendOTP } from "./controllers/otpController.js";
+import { deleteAdmin, deleteCategory, deleteSeller, deleteCatalogue } from "./controllers/deleteController.js";
 import { fetchSummaryCounts } from "./controllers/summaryController.js";
 import { fetchAllRegisterBusiness } from "./controllers/registerBusiness.js";
 import { approveBusinessCategory, fetchPendingBusinessCategories, fetchAllBusinessCategories } from "./controllers/businessCategories.js";
@@ -35,6 +36,10 @@ app.get("/fetch-admins", fetchAdmins);
 app.post("/login", verifyEmailAndPassword);
 
 app.post("/send-otp", sendOTP);
+app.delete("/delete-admin", deleteAdmin);
+app.delete("/delete-category", deleteCategory);
+app.delete("/delete-seller", deleteSeller);
+app.delete("/delete-catalogue", deleteCatalogue);
 app.get("/fetch-summary-counts", fetchSummaryCounts);
 app.get("/fetch-all-register-business", fetchAllRegisterBusiness);
 

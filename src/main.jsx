@@ -12,20 +12,18 @@ import Home from "./screens/Home.jsx"; // Import the Home component
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/login" replace />, // Added replace for better history management
+    element: <Navigate to="/login" replace />,
   },
   {
     path: "/login",
     element: <Login />,
   },
   {
-    path: "/home", // Added route for Home
+    path: "/home",
     element: <Home />,
   },
 ]);
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
     <RouterProvider router={router} />
-  </StrictMode>
 );

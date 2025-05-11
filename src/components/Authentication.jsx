@@ -19,8 +19,8 @@ const Authentication = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (step === "otp" && isOpen) {
-      setTimer(60); // Reset timer
-      clearInterval(timerIntervalRef.current); // Clear any existing interval
+      setTimer(60); 
+      clearInterval(timerIntervalRef.current); 
       timerIntervalRef.current = setInterval(() => {
         setTimer((prevTimer) => {
           if (prevTimer <= 1) {
@@ -36,7 +36,6 @@ const Authentication = ({ isOpen, onClose }) => {
     } else {
       clearInterval(timerIntervalRef.current);
     }
-    // Cleanup interval on component unmount or when modal is closed or step changes
     return () => clearInterval(timerIntervalRef.current);
   }, [step, isOpen]);
 
@@ -58,19 +57,15 @@ const Authentication = ({ isOpen, onClose }) => {
         setStep("otp");
         setLoginOTP(response.data.otp);
       } else {
-        // This case might not be hit if axios throws error for non-2xx status
         setError("Incorrect credentials. Please try again.");
       }
     } catch (err) {
       if (err.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
+
         setError("Incorrect credentials. Please try again.");
       } else if (err.request) {
-        // The request was made but no response was received
         setError("Network error. Please try again.");
       } else {
-        // Something happened in setting up the request that triggered an Error
         setError("An unexpected error occurred. Please try again.");
       }
       console.error("Login API error:", err);
@@ -85,13 +80,11 @@ const Authentication = ({ isOpen, onClose }) => {
     setLoading(true);
     const enteredOtp = otp.join("");
 
-    // Simulate API call for OTP verification if needed, or direct check
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-
     if (enteredOtp == parseInt(loginOTP)) {
       console.log("OTP verified successfully.");
+      localStorage.setItem("isLoggedIn", true);
       navigate("/home");
-      handleClose(); // Use handleClose to reset state and close
+      handleClose();
     } else {
       console.log("OTP verification failed.");
       setError("Wrong OTP. Please try again.");

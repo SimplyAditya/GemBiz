@@ -9,6 +9,7 @@ import "./index.css";
 import Login from "./screens/login.jsx";
 import Home from "./screens/Home.jsx"; // Import the Home component
 import DashboardOutlet from "./Outlets/DashboardOutlet.jsx";
+import AllAdminOutlet from "./Outlets/AllAdminOutlet.jsx";
 
 const router = createBrowserRouter([
   {
@@ -27,6 +28,10 @@ const router = createBrowserRouter([
         path: "home",
         element: <DashboardOutlet />,
       },
+      {
+        path:"viewalladmin",
+        element: <AllAdminOutlet/>
+      }
     ],
   },
 ]);

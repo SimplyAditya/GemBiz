@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { FaTrash } from "react-icons/fa";
 import IndividualCatalogueModal from "../components/IndividualCatalogueModal";
 
 const AllCatalogues = () => {
@@ -13,6 +14,7 @@ const AllCatalogues = () => {
   const PENDING_CATALOGUES_API_URL = "https://gem-biz.onrender.com/fetch-pending-business-catalogues"; 
   const ALL_CATALOGUES_API_URL = "https://gem-biz.onrender.com/fetch-all-business-catalogues"; 
   const APPROVE_CATALOGUE_API_URL = "https://gem-biz.onrender.com/approve-business-catalogue";
+  const DELETE_CATALOGUE_API_URL = "https://gem-biz.onrender.com/delete-catalogue";
   const SELLERS_API_URL = "https://gem-biz.onrender.com/fetch-all-register-business";
 
   useEffect(() => {
@@ -100,6 +102,25 @@ const AllCatalogues = () => {
     );
   }
 
+  const handleDeleteCatalogue = async (catalogueId, isPending) => {
+    try {
+      const response = await axios.delete(DELETE_CATALOGUE_API_URL, {
+        data: { id: catalogueId }
+      });
+      if (response.status === 200) {
+        if (isPending) {
+          setPendingCatalogues(prev => prev.filter(cat => cat.id !== catalogueId));
+        } else {
+          setAllCatalogues(prev => prev.filter(cat => cat.id !== catalogueId));
+        }
+      } else {
+        console.error("Failed to delete catalogue");
+      }
+    } catch (error) {
+      console.error("Error deleting catalogue:", error);
+    }
+  };
+
   const CatalogueCard = ({ catalogue, isPending }) => (
     <div 
       className="p-4 border rounded shadow-md bg-white hover:shadow-lg transition-shadow cursor-pointer"
@@ -166,14 +187,26 @@ const AllCatalogues = () => {
           )}
         </div>
 
-        {isPending && (
+        <div className="flex flex-col gap-2 mt-4">
+          {isPending && (
+            <button
+              onClick={() => handleApproveCatalogue(catalogue.id)}
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+              Approve Catalogue
+            </button>
+          )}
           <button
-            onClick={() => handleApproveCatalogue(catalogue.id)}
-            className="mt-2 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent modal from opening when clicking delete
+              handleDeleteCatalogue(catalogue.id, isPending);
+            }}
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center justify-center gap-2"
           >
-            Approve Catalogue
+            <FaTrash className="h-4 w-4" />
+            Delete
           </button>
-        )}
+        </div>
       </div>
     </div>
   );

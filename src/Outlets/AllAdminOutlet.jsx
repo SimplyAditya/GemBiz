@@ -35,17 +35,33 @@ const AllAdminOutlet = () => {
             <p className="text-sm text-gray-600">{user.email}</p>
             <div className="flex justify-between items-center">
               <p className="text-sm text-green-600 font-semibold">Status: Active</p>
-              <button
-                onClick={() => {
-                  const updatedUsers = [...adminUsers];
-                  updatedUsers.splice(index, 1);
-                  localStorage.setItem("adminUsers", JSON.stringify(updatedUsers));
-                  window.location.reload(); // Refresh to reflect changes
-                }}
-                className="text-red-500 hover:text-red-600"
-              >
-                <FaTrash className="h-5 w-5" />
-              </button>
+<button
+  onClick={async () => {
+    try {
+      const response = await fetch("https://gem-biz.onrender.com/delete-admin", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: user.id }),
+      });
+
+      if (response.ok) {
+        const updatedUsers = [...adminUsers];
+        updatedUsers.splice(index, 1);
+        localStorage.setItem("adminUsers", JSON.stringify(updatedUsers));
+        window.location.reload(); // Refresh to reflect changes
+      } else {
+        console.error("Failed to delete admin");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  }}
+  className="text-red-500 hover:text-red-600"
+>
+  <FaTrash className="h-5 w-5" />
+</button>
             </div>
           </div>
         ))}

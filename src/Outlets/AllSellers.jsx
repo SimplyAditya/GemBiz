@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { FaTrash } from "react-icons/fa";
 
 const AllSellers = () => {
   const [pendingSellers, setPendingSellers] = useState([]);
@@ -73,7 +74,7 @@ const AllSellers = () => {
                 key={seller.id}
                 className="p-4 border rounded shadow-md bg-white hover:shadow-lg transition-shadow"
               >
-                <div className="flex flex-col space-y-2">
+<div className="flex flex-col space-y-2">
                   <div className="flex justify-between items-start">
                     <h3 className="text-xl font-semibold text-gray-800">{seller.name}</h3>
                     <span className={`px-2 py-1 text-xs rounded-full ${
@@ -83,7 +84,7 @@ const AllSellers = () => {
                     </span>
                   </div>
                   <p className="text-sm font-medium text-gray-700">{seller.user_name}</p>
-                  <div className="text-sm text-gray-600">
+  <div className="text-sm text-gray-600 mb-4">
                     <p className="flex items-center gap-2">
                       <span className="font-medium">Category:</span> {seller.category}
                     </p>
@@ -104,25 +105,51 @@ const AllSellers = () => {
                       </a>
                     </p>
                   </div>
-                  {!seller.storeverified && (
+                  <div className="flex flex-col gap-2 mt-4">
+                    {!seller.storeverified && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const response = await axios.post("https://gem-biz.onrender.com/approve-business-seller", { id: seller.id });
+                            if (response.status === 200) {
+                              // Move seller from pending to allSellers
+                              setPendingSellers(prev => prev.filter(s => s.id !== seller.id));
+                              setAllSellers(prev => [...prev, { ...seller, storeverified: true }]);
+                            }
+                          } catch (error) {
+                            console.error("Error approving seller:", error);
+                          }
+                        }}
+                        className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                      >
+                        Approve
+                      </button>
+                    )}
                     <button
                       onClick={async () => {
                         try {
-                          const response = await axios.post("https://gem-biz.onrender.com/approve-business-seller", { id: seller.id });
+                          const response = await axios.delete("https://gem-biz.onrender.com/delete-seller", {
+                            data: { id: seller.id },
+                          });
                           if (response.status === 200) {
-                            // Move seller from pending to allSellers
-                            setPendingSellers(prev => prev.filter(s => s.id !== seller.id));
-                            setAllSellers(prev => [...prev, { ...seller, storeverified: true }]);
+                            if (!seller.storeverified) {
+                              setPendingSellers(prev => prev.filter(s => s.id !== seller.id));
+                            } else {
+                              setAllSellers(prev => prev.filter(s => s.id !== seller.id));
+                            }
+                          } else {
+                            console.error("Failed to delete seller");
                           }
                         } catch (error) {
-                          console.error("Error approving seller:", error);
+                          console.error("Error deleting seller:", error);
                         }
                       }}
-                      className="mt-2 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                      className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center justify-center gap-2"
                     >
-                      Approve
+                      <FaTrash className="h-4 w-4" />
+                      Delete
                     </button>
-                  )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -151,7 +178,7 @@ const AllSellers = () => {
                     </span>
                   </div>
                   <p className="text-sm font-medium text-gray-700">{seller.user_name}</p>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-600 mb-4">
                     <p className="flex items-center gap-2">
                       <span className="font-medium">Category:</span> {seller.category}
                     </p>
@@ -172,6 +199,26 @@ const AllSellers = () => {
                       </a>
                     </p>
                   </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await axios.delete("https://gem-biz.onrender.com/delete-seller", {
+                          data: { id: seller.id },
+                        });
+                        if (response.status === 200) {
+                          setAllSellers(prev => prev.filter(s => s.id !== seller.id));
+                        } else {
+                          console.error("Failed to delete seller");
+                        }
+                      } catch (error) {
+                        console.error("Error deleting seller:", error);
+                      }
+                    }}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center justify-center gap-2"
+                  >
+                    <FaTrash className="h-4 w-4" />
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}

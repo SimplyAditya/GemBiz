@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { FaTrash } from "react-icons/fa";
 
 const AllCategories = () => {
   const [pendingCategories, setPendingCategories] = useState([]);
@@ -9,6 +10,7 @@ const AllCategories = () => {
   const PENDING_CATEGORIES_API_URL = "https://gem-biz.onrender.com/fetch-pending-business-categories";
   const ALL_CATEGORIES_API_URL = "https://gem-biz.onrender.com/fetch-all-business-categories";
   const APPROVE_CATEGORY_API_URL = "https://gem-biz.onrender.com/approve-business-category";
+  const DELETE_CATEGORY_API_URL = "https://gem-biz.onrender.com/delete-category";
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,6 +84,25 @@ const AllCategories = () => {
     );
   }
 
+  const handleDeleteCategory = async (categoryId, isPending) => {
+    try {
+      const response = await axios.delete(DELETE_CATEGORY_API_URL, {
+        data: { id: categoryId }
+      });
+      if (response.status === 200) {
+        if (isPending) {
+          setPendingCategories(prev => prev.filter(cat => cat.id !== categoryId));
+        } else {
+          setAllCategories(prev => prev.filter(cat => cat.id !== categoryId));
+        }
+      } else {
+        console.error("Failed to delete category");
+      }
+    } catch (error) {
+      console.error("Error deleting category:", error);
+    }
+  };
+
   const CategoryCard = ({ category, isPending }) => (
     <div className="p-4 border rounded shadow-md bg-white hover:shadow-lg transition-shadow">
       <div className="flex flex-col space-y-3">
@@ -109,14 +130,23 @@ const AllCategories = () => {
           )}
         </div>
 
-        {isPending && (
+        <div className="flex flex-col gap-2 mt-4">
+          {isPending && (
+            <button
+              onClick={() => handleApproveCategory(category.id)}
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+              Approve Category
+            </button>
+          )}
           <button
-            onClick={() => handleApproveCategory(category.id)}
-            className="mt-2 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            onClick={() => handleDeleteCategory(category.id, isPending)}
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center justify-center gap-2"
           >
-            Approve Category
+            <FaTrash className="h-4 w-4" />
+            Delete
           </button>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,22 @@
 import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import db from "../db.js";
 
+export const fetchAllBusinessCategories = async (req, res) => {
+  try {
+    const allBusinessCategories = await getDocs(collection(db, "businesscategories"));
+
+    const categories = allBusinessCategories.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    res.status(200).json(categories);
+  } catch (error) {
+    console.error("Error fetching all business categories:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export const fetchPendingBusinessCategories = async (req, res) => {
   try {
     const pendingBusinessCategories = await getDocs(

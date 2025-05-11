@@ -8,6 +8,22 @@ import {
 } from "firebase/firestore";
 import db from "../db.js";
 
+export const fetchAllBusinessCatalogue = async (req, res) => {
+  try {
+    const allBusinessCatalogues = await getDocs(collection(db, "bbusinesscatalogue"));
+
+    const catalogues = allBusinessCatalogues.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    res.status(200).json(catalogues);
+  } catch (error) {
+    console.error("Error fetching all business catalogues:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export const fetchPendingBusinessCatalogues = async (req, res) => {
   try {
     const pendingBusinessCategories = await getDocs(

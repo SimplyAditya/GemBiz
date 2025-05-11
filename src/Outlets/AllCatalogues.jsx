@@ -1,23 +1,28 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import IndividualCatalogueModal from "../components/IndividualCatalogueModal";
 
 const AllCatalogues = () => {
   const [pendingCatalogues, setPendingCatalogues] = useState([]);
   const [allCatalogues, setAllCatalogues] = useState([]);
+  const [sellers, setSellers] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedCatalogue, setSelectedCatalogue] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // TODO: Update these API URLs when provided
-  const PENDING_CATALOGUES_API_URL = "https://gem-biz.onrender.com/fetch-pending-business-catalogues"; // Placeholder
-  const ALL_CATALOGUES_API_URL = "https://gem-biz.onrender.com/fetch-all-business-catalogues"; // Placeholder
-  const APPROVE_CATALOGUE_API_URL = "https://gem-biz.onrender.com/approve-business-catalogue"; // Placeholder
+  const PENDING_CATALOGUES_API_URL = "https://gem-biz.onrender.com/fetch-pending-business-catalogues"; 
+  const ALL_CATALOGUES_API_URL = "https://gem-biz.onrender.com/fetch-all-business-catalogues"; 
+  const APPROVE_CATALOGUE_API_URL = "https://gem-biz.onrender.com/approve-business-catalogue";
+  const SELLERS_API_URL = "https://gem-biz.onrender.com/fetch-all-register-business";
 
   useEffect(() => {
-    const fetchCatalogues = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [pendingResponse, allResponse] = await Promise.all([
+        const [pendingResponse, allResponse, sellersResponse] = await Promise.all([
           axios.get(PENDING_CATALOGUES_API_URL),
           axios.get(ALL_CATALOGUES_API_URL),
+          axios.get(SELLERS_API_URL),
         ]);
 
         if (pendingResponse.status === 200) {
@@ -29,9 +34,20 @@ const AllCatalogues = () => {
           const filteredAllCatalogues = allResponse.data.filter(cat => !pendingCatalogueIds.has(cat.id));
           setAllCatalogues(filteredAllCatalogues);
         }
+
+        if (sellersResponse.status === 200) {
+          // Create a map of seller data by uid for easy lookup
+          const sellersMap = sellersResponse.data.reduce((acc, seller) => {
+            acc[seller.uid] = {
+              name: seller.name,
+              user_name: seller.user_name
+            };
+            return acc;
+          }, {});
+          setSellers(sellersMap);
+        }
       } catch (error) {
         console.error("Error fetching catalogues:", error);
-        // Set empty arrays on error to prevent issues with .map
         setPendingCatalogues([]);
         setAllCatalogues([]);
       } finally {
@@ -39,7 +55,7 @@ const AllCatalogues = () => {
       }
     };
 
-    fetchCatalogues();
+    fetchData();
   }, []);
 
   const handleApproveCatalogue = async (catalogueId) => {
@@ -49,7 +65,7 @@ const AllCatalogues = () => {
         const approvedCatalogue = pendingCatalogues.find(cat => cat.id === catalogueId);
         if (approvedCatalogue) {
           setPendingCatalogues(prev => prev.filter(cat => cat.id !== catalogueId));
-          setAllCatalogues(prev => [...prev, { ...approvedCatalogue, approved: true }]); // Assuming 'approved' field
+          setAllCatalogues(prev => [...prev, { ...approvedCatalogue, approved: true }])
         }
       }
     } catch (error) {
@@ -84,26 +100,78 @@ const AllCatalogues = () => {
     );
   }
 
-  // TODO: Update card structure based on actual catalogue data fields
   const CatalogueCard = ({ catalogue, isPending }) => (
-    <div className="p-4 border rounded shadow-md bg-white hover:shadow-lg transition-shadow">
-      <div className="flex flex-col space-y-2">
+    <div 
+      className="p-4 border rounded shadow-md bg-white hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={(e) => {
+        // Don't open modal if clicking the approve button
+        if (!e.target.closest('button')) {
+          setSelectedCatalogue(catalogue);
+          setIsModalOpen(true);
+        }
+      }}
+    >
+      <div className="flex flex-col space-y-3">
         <div className="flex justify-between items-start">
-          <h3 className="text-xl font-semibold text-gray-800">{catalogue.name || "Catalogue Name"}</h3>
+          <h3 className="text-xl font-semibold text-gray-800">{catalogue.name}</h3>
           <span className={`px-2 py-1 text-xs rounded-full ${
             !isPending ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
           }`}>
-            {!isPending ? 'Approved' : 'Pending'}
+            {catalogue.itemStatus || (isPending ? 'Pending' : 'Approved')}
           </span>
         </div>
-        <p className="text-sm text-gray-600">ID: {catalogue.id}</p>
-        {/* Add more catalogue details here */}
+        
+        {catalogue.imageUrls && catalogue.imageUrls.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto py-2">
+            {catalogue.imageUrls.slice(0, 3).map((url, index) => (
+              <img 
+                key={index}
+                src={url} 
+                alt={`Product ${index + 1}`}
+                className="w-20 h-20 object-cover rounded"
+              />
+            ))}
+            {catalogue.imageUrls.length > 3 && (
+              <div className="w-20 h-20 bg-gray-100 rounded flex items-center justify-center text-gray-500">
+                +{catalogue.imageUrls.length - 3}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="text-sm space-y-2">
+          {sellers[catalogue.uid] && (
+            <div className="bg-gray-50 p-2 rounded">
+              <p className="font-medium text-gray-800">{sellers[catalogue.uid].name}</p>
+              <p className="text-gray-600">@{sellers[catalogue.uid].user_name}</p>
+            </div>
+          )}
+          <p className="text-gray-700">{catalogue.description}</p>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">₹{catalogue.sellingPrice}</span>
+            {catalogue.mrp && catalogue.mrp !== catalogue.sellingPrice && (
+              <span className="text-gray-500 line-through">₹{catalogue.mrp}</span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {catalogue.sizes && catalogue.sizes.map((size, index) => (
+              <span key={index} className="px-2 py-1 bg-gray-100 rounded text-xs">{size}</span>
+            ))}
+          </div>
+          {catalogue.quantities && (
+            <p className="text-gray-600">Quantity: {catalogue.quantities.join(', ')}</p>
+          )}
+          {catalogue.stockInfo && (
+            <p className="text-gray-600">Stock: {catalogue.stockInfo}</p>
+          )}
+        </div>
+
         {isPending && (
           <button
             onClick={() => handleApproveCatalogue(catalogue.id)}
             className="mt-2 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           >
-            Approve
+            Approve Catalogue
           </button>
         )}
       </div>
@@ -137,6 +205,17 @@ const AllCatalogues = () => {
           <p>No approved catalogues.</p>
         )}
       </section>
+
+      {/* Modal */}
+      <IndividualCatalogueModal
+        catalogue={selectedCatalogue}
+        seller={selectedCatalogue ? sellers[selectedCatalogue.uid] : null}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedCatalogue(null);
+        }}
+      />
     </div>
   );
 };

@@ -26,8 +26,8 @@ class ContactOptionsBottomSheet extends StatelessWidget {
       }
 
       final data = querySnapshot.docs.first.data() as Map<String, dynamic>;
-      
-      return '''Hi Go Extra Mile team, please verify my Business account.
+
+      return '''Hi GemBiz team, please verify my Business account.
 
 Contact Details:
 Business Name: ${data['name'] ?? 'N/A'}
@@ -66,7 +66,8 @@ Email: ${data['email'] ?? 'N/A'}''';
     final body = await _getMessageWithUserDetails();
     final encodedSubject = Uri.encodeComponent('Account Verification Request');
     final encodedBody = Uri.encodeComponent(body);
-    final Uri url = Uri.parse('mailto:$emailAddress?subject=$encodedSubject&body=$encodedBody');
+    final Uri url = Uri.parse(
+        'mailto:$emailAddress?subject=$encodedSubject&body=$encodedBody');
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
     } else {
@@ -84,7 +85,8 @@ Email: ${data['email'] ?? 'N/A'}''';
         padding: EdgeInsets.all(20 * scaleFactor),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20 * scaleFactor)),
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(20 * scaleFactor)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -114,7 +116,8 @@ Email: ${data['email'] ?? 'N/A'}''';
             Text(
               'Verify your account to sell your products directly to your customers.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600], fontSize: 14 * scaleFactor),
+              style: TextStyle(
+                  color: Colors.grey[600], fontSize: 14 * scaleFactor),
             ),
             SizedBox(height: 30 * scaleFactor),
             Container(
@@ -127,14 +130,19 @@ Email: ${data['email'] ?? 'N/A'}''';
                   InkWell(
                     onTap: () => _makePhoneCall(context),
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 15 * scaleFactor, horizontal: 20 * scaleFactor),
+                      padding: EdgeInsets.symmetric(
+                          vertical: 15 * scaleFactor,
+                          horizontal: 20 * scaleFactor),
                       child: Row(
                         children: [
-                          Icon(Icons.phone, color: Colors.white, size: 30 * scaleFactor),
+                          Icon(Icons.phone,
+                              color: Colors.white, size: 30 * scaleFactor),
                           SizedBox(width: 25 * scaleFactor),
                           Text(
                             'Call Us',
-                            style: TextStyle(color: Colors.white, fontSize: 16 * scaleFactor),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16 * scaleFactor),
                           ),
                         ],
                       ),
@@ -147,7 +155,9 @@ Email: ${data['email'] ?? 'N/A'}''';
                   InkWell(
                     onTap: () => _openWhatsapp(context),
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 5 * scaleFactor, horizontal: 5 * scaleFactor),
+                      padding: EdgeInsets.symmetric(
+                          vertical: 5 * scaleFactor,
+                          horizontal: 5 * scaleFactor),
                       child: Row(
                         children: [
                           Image.asset(
@@ -158,7 +168,9 @@ Email: ${data['email'] ?? 'N/A'}''';
                           SizedBox(width: 5 * scaleFactor),
                           Text(
                             'WhatsApp Us',
-                            style: TextStyle(color: Colors.white, fontSize: 16 * scaleFactor),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16 * scaleFactor),
                           ),
                         ],
                       ),
@@ -171,14 +183,19 @@ Email: ${data['email'] ?? 'N/A'}''';
                   InkWell(
                     onTap: () => _sendEmail(context),
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 15 * scaleFactor, horizontal: 20 * scaleFactor),
+                      padding: EdgeInsets.symmetric(
+                          vertical: 15 * scaleFactor,
+                          horizontal: 20 * scaleFactor),
                       child: Row(
                         children: [
-                          Icon(Icons.email, color: Colors.white, size: 30 * scaleFactor),
+                          Icon(Icons.email,
+                              color: Colors.white, size: 30 * scaleFactor),
                           SizedBox(width: 25 * scaleFactor),
                           Text(
                             'Email Us',
-                            style: TextStyle(color: Colors.white, fontSize: 16 * scaleFactor),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16 * scaleFactor),
                           ),
                         ],
                       ),

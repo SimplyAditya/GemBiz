@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gem2/screens/email_verification.dart';
 import 'package:gem2/screens/gst_entry_screen.dart';
 import 'package:latlong2/latlong.dart';
 import 'business_category_screen.dart';
@@ -22,17 +23,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gem2/providers/auth_provider.dart';
 import 'package:gem2/widgets/snackbar.dart';
 
-
 class CreateBusinessAccountScreen extends StatefulWidget {
   final String? docId;
   const CreateBusinessAccountScreen({super.key, this.docId});
 
   @override
   // ignore: library_private_types_in_public_api
-  _CreateBusinessAccountScreenState createState() => _CreateBusinessAccountScreenState();
+  _CreateBusinessAccountScreenState createState() =>
+      _CreateBusinessAccountScreenState();
 }
 
-class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScreen> {
+class _CreateBusinessAccountScreenState
+    extends State<CreateBusinessAccountScreen> {
   final _formKey = GlobalKey<FormState>();
   String _businessRole = 'owner';
   String _gstNumber = '';
@@ -44,7 +46,8 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
   bool _isLoading = false;
   String? _existingLogoUrl; // Add this variable to store existing logo URL
 // Add this for GST file URL
-  final TextEditingController _businessCategoryController = TextEditingController();
+  final TextEditingController _businessCategoryController =
+      TextEditingController();
   final TextEditingController _businessNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController userNameController = TextEditingController();
@@ -52,7 +55,8 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController websiteController = TextEditingController();
   final TextEditingController _gstController = TextEditingController();
-  final TextEditingController _displayWebsiteController = TextEditingController();
+  final TextEditingController _displayWebsiteController =
+      TextEditingController();
   String _actualWebsiteValue = '';
   String? _userEmail; // Add this variable to store the email
 
@@ -62,44 +66,46 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
     if (widget.docId != null) {
       _loadExistingData();
     }
-     WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AppAuthProvider>(context, listen: false);
       setState(() {
         _userEmail = authProvider.currentUser?.email;
       });
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final storeDataProvider = Provider.of<StoreDataProvider>(context, listen: false);
+      final storeDataProvider =
+          Provider.of<StoreDataProvider>(context, listen: false);
       setState(() {
         _storeTimings = storeDataProvider.getFormattedStoreTimes();
       });
     });
     websiteController.addListener(() {
       if (websiteController.text.isNotEmpty) {
-        _displayWebsiteController.text = websiteController.text.replaceAll(RegExp(r'https?://'), '');
+        _displayWebsiteController.text =
+            websiteController.text.replaceAll(RegExp(r'https?://'), '');
       }
     });
   }
 
   String? _validateWebsite(String? value) {
-  if (value == null || value.isEmpty) {
-    return null;  // Website is optional
+    if (value == null || value.isEmpty) {
+      return null; // Website is optional
+    }
+
+    // Basic URL pattern without requiring http/https prefix
+    final urlPattern = RegExp(
+      r'^[\w-]+(\.[\w-]+)+([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?$',
+      caseSensitive: false,
+    );
+
+    if (!urlPattern.hasMatch(value)) {
+      return 'Please enter a valid website URL';
+      //showTopSnackBar(context, 'Please enter a valid website URL');
+      //testreturn ' ';
+    }
+
+    return null;
   }
-
-  // Basic URL pattern without requiring http/https prefix
-  final urlPattern = RegExp(
-    r'^[\w-]+(\.[\w-]+)+([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?$',
-    caseSensitive: false,
-  );
-
-  if (!urlPattern.hasMatch(value)) {
-    return 'Please enter a valid website URL';
-    //showTopSnackBar(context, 'Please enter a valid website URL');
-    //testreturn ' ';
-  }
-
-  return null;
-}
 
   Future<void> _loadExistingData() async {
     try {
@@ -108,25 +114,27 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
           .doc(widget.docId)
           .get();
 
-          if (doc.exists) {
-            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-            // Load existing data into the StoreDataProvider
-            final storeDataProvider = Provider.of<StoreDataProvider>(context, listen: false);
-            
-            String website = data['website'] as String? ?? '';
-            websiteController.text = website;
-            _actualWebsiteValue = website;
-            
-            // Update store availability
-            if (data['availability'] != null) {
-              storeDataProvider.updateAvailability(data['availability']);
-            }
+      if (doc.exists) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        // Load existing data into the StoreDataProvider
+        final storeDataProvider =
+            Provider.of<StoreDataProvider>(context, listen: false);
 
-          // Update store times
-          if (data['storeTimes'] != null) {
+        String website = data['website'] as String? ?? '';
+        websiteController.text = website;
+        _actualWebsiteValue = website;
+
+        // Update store availability
+        if (data['availability'] != null) {
+          storeDataProvider.updateAvailability(data['availability']);
+        }
+
+        // Update store times
+        if (data['storeTimes'] != null) {
           Map<String, List<TimeSlot>> parsedTimes = {};
-          Map<String, dynamic> storeTimes = Map<String, dynamic>.from(data['storeTimes'] as Map);
-          
+          Map<String, dynamic> storeTimes =
+              Map<String, dynamic>.from(data['storeTimes'] as Map);
+
           storeTimes.forEach((day, slots) {
             if (slots is List) {
               parsedTimes[day] = (slots).map((slot) {
@@ -144,9 +152,14 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
           _businessCategory = data['category'] as String? ?? '';
           _businessNameController.text = data['name'] as String? ?? '';
           _descriptionController.text = data['description'] as String? ?? '';
-          _gstNumber = (data['gst'] as Map<String, dynamic>?)?['gst_no'] as String? ?? '';
-          _gstController.text = (data['gst'] as Map<String, dynamic>?)?['gst_no'] as String? ?? '';
-          _gstFileType = (data['gst'] as Map<String, dynamic>?)?['gst_file_type'] as String?;
+          _gstNumber =
+              (data['gst'] as Map<String, dynamic>?)?['gst_no'] as String? ??
+                  '';
+          _gstController.text =
+              (data['gst'] as Map<String, dynamic>?)?['gst_no'] as String? ??
+                  '';
+          _gstFileType = (data['gst']
+              as Map<String, dynamic>?)?['gst_file_type'] as String?;
           _userEmail = data['email'] as String? ?? '';
           websiteController.text = data['website'] as String? ?? '';
           mobileController.text = data['mobile'] as String? ?? '';
@@ -154,20 +167,21 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
           _storeTimings = data['store_timings'] as String? ?? '';
           _businessRole = data['user_type'] as String? ?? 'owner';
           _addressController.text = data['address'] as String? ?? '';
-          _existingLogoUrl = data['logo_image_url'] as String?; // Store the existing logo URL
-        });        
-        final String savedAddress = data['address'] as String? ?? '';
-      if (savedAddress.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Provider.of<LocationProvider>(context, listen: false)
-              .setAddressOnly(savedAddress);
+          _existingLogoUrl =
+              data['logo_image_url'] as String?; // Store the existing logo URL
         });
+        final String savedAddress = data['address'] as String? ?? '';
+        if (savedAddress.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Provider.of<LocationProvider>(context, listen: false)
+                .setAddressOnly(savedAddress);
+          });
+        }
       }
+    } catch (e) {
+      print('Error loading existing data: $e');
     }
-  } catch (e) {
-    print('Error loading existing data: $e');
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -229,73 +243,73 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
   }
 
   Widget _buildMobileNumberField() {
-      return TextFormField(
-        controller: mobileController,
-        keyboardType: TextInputType.number,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-          LengthLimitingTextInputFormatter(10),
-        ],
-        decoration: InputDecoration(
-          labelText: 'Mobile number*',
-          prefixIcon: const Icon(Icons.phone),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+    return TextFormField(
+      controller: mobileController,
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(10),
+      ],
+      decoration: InputDecoration(
+        labelText: 'Mobile number*',
+        prefixIcon: const Icon(Icons.phone),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
-        validator: (value) {
-          if (value!.isEmpty) return 'Mobile number is required';
-          if (value.length != 10) return 'Mobile number must be 10 digits';
-          return null;
-        },
-      );
-    }
+      ),
+      validator: (value) {
+        if (value!.isEmpty) return 'Mobile number is required';
+        if (value.length != 10) return 'Mobile number must be 10 digits';
+        return null;
+      },
+    );
+  }
 
   Widget _buildBusinessLogoPicker() {
-  return InkWell(
-    onTap: () async {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-      );
+    return InkWell(
+      onTap: () async {
+        FilePickerResult? result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          allowMultiple: false,
+        );
 
-      if (result != null && result.files.single.path != null) {
-        setState(() {
-          _attachedImagePath = result.files.single.path!;
-        });
-      }
-    },
-    child: Stack(
-      alignment: Alignment.center,
-      children: [
-        CircleAvatar(
-          radius: 50,
-          backgroundColor: Colors.grey[300],
-          backgroundImage: _attachedImagePath != null
-              ? FileImage(File(_attachedImagePath!))
-              : (_existingLogoUrl != null && _existingLogoUrl!.isNotEmpty)
-                  ? NetworkImage(_existingLogoUrl!) as ImageProvider
-                  : null,
-        ),
-        Positioned(
-          bottom: 8,
-          right: 140,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(1),
-              shape: BoxShape.circle,
-            ),
-            child: const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Icon(Icons.camera_alt_outlined, size: 20, color: Colors.white),
+        if (result != null && result.files.single.path != null) {
+          setState(() {
+            _attachedImagePath = result.files.single.path!;
+          });
+        }
+      },
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CircleAvatar(
+            radius: 50,
+            backgroundColor: Colors.grey[300],
+            backgroundImage: _attachedImagePath != null
+                ? FileImage(File(_attachedImagePath!))
+                : (_existingLogoUrl != null && _existingLogoUrl!.isNotEmpty)
+                    ? NetworkImage(_existingLogoUrl!) as ImageProvider
+                    : null,
+          ),
+          Positioned(
+            bottom: 8,
+            right: 140,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(1),
+                shape: BoxShape.circle,
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Icon(Icons.camera_alt_outlined,
+                    size: 20, color: Colors.white),
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
+        ],
+      ),
+    );
+  }
 
   Future<String> uploadImage(File imageFile) async {
     try {
@@ -313,7 +327,8 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
   }
 
   Widget _buildBusinessCategoryField() {
-    return _buildFieldWithArrow('Business Category*', _businessCategoryController, () async {
+    return _buildFieldWithArrow(
+        'Business Category*', _businessCategoryController, () async {
       final result = await Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const BusinessCategoryScreen()),
@@ -327,7 +342,8 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
     });
   }
 
-  Widget _buildFieldWithArrow(String label, TextEditingController controller, VoidCallback onTap) {
+  Widget _buildFieldWithArrow(
+      String label, TextEditingController controller, VoidCallback onTap) {
     return TextFormField(
       controller: controller,
       readOnly: true,
@@ -351,7 +367,7 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
     return TextFormField(
       controller: _businessNameController,
       maxLength: 50,
-      maxLines: null,  // This allows multiple lines
+      maxLines: null, // This allows multiple lines
       decoration: InputDecoration(
         labelText: 'Business Name*',
         prefixIcon: const Icon(Icons.business),
@@ -411,51 +427,55 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
     );
   }
 
-  Widget _buildTextField(String labelText, IconData icon, {FormFieldValidator<String>? validator}) {
-  if (labelText == 'Website') {
+  Widget _buildTextField(String labelText, IconData icon,
+      {FormFieldValidator<String>? validator}) {
+    if (labelText == 'Website') {
+      return TextFormField(
+        controller: _displayWebsiteController, // Use display controller instead
+        decoration: InputDecoration(
+          labelText: labelText,
+          prefixIcon: Icon(icon),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          helperText: 'Optional. Example: www.example.com',
+        ),
+        validator: _validateWebsite,
+        onChanged: (value) {
+          if (value.isNotEmpty) {
+            // Store the actual value with https:// internally
+            _actualWebsiteValue =
+                !value.startsWith('http://') && !value.startsWith('https://')
+                    ? 'https://$value'
+                    : value;
+
+            // Update the actual website controller
+            websiteController.text = _actualWebsiteValue;
+          } else {
+            _actualWebsiteValue = '';
+            websiteController.text = '';
+          }
+        },
+      );
+    }
+
+    // Rest of the original code for other fields remains the same
     return TextFormField(
-      controller: _displayWebsiteController,  // Use display controller instead
+      controller: labelText == 'Mobile number*'
+          ? mobileController
+          : labelText == 'Name*'
+              ? userNameController
+              : null,
       decoration: InputDecoration(
         labelText: labelText,
         prefixIcon: Icon(icon),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        helperText: 'Optional. Example: www.example.com',
       ),
-      validator: _validateWebsite,
-      onChanged: (value) {
-        if (value.isNotEmpty) {
-          // Store the actual value with https:// internally
-          _actualWebsiteValue = !value.startsWith('http://') && !value.startsWith('https://')
-              ? 'https://$value'
-              : value;
-          
-          // Update the actual website controller
-          websiteController.text = _actualWebsiteValue;
-        } else {
-          _actualWebsiteValue = '';
-          websiteController.text = '';
-        }
-      },
+      validator: validator,
     );
   }
-  
-  // Rest of the original code for other fields remains the same
-  return TextFormField(
-    controller: labelText == 'Mobile number*' ? mobileController 
-              : labelText == 'Name*' ? userNameController
-              : null,
-    decoration: InputDecoration(
-      labelText: labelText,
-      prefixIcon: Icon(icon),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    ),
-    validator: validator,
-  );
-}
 
   Widget _buildGstNumberField() {
     return TextFormField(
@@ -475,21 +495,23 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
           existingGstUrl = await _getExistingGstFileUrl();
         }
         if (!mounted) return;
-        
+
         final result = await Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => GstEntryScreen(
-            initialGstNumber: _gstNumber,
-            initialGstFileType: _gstFileType,
-            initialGstFilePath: _gstFilePath,
-            existingGstFileUrl: existingGstUrl,
-          )),
+          MaterialPageRoute(
+              builder: (context) => GstEntryScreen(
+                    initialGstNumber: _gstNumber,
+                    initialGstFileType: _gstFileType,
+                    initialGstFilePath: _gstFilePath,
+                    existingGstFileUrl: existingGstUrl,
+                  )),
         );
-        
+
         if (result != null) {
           setState(() {
             _gstNumber = result['gstNumber'] ?? '';
-            _gstController.text = result['gstNumber'] ?? ''; // Update the controller text
+            _gstController.text =
+                result['gstNumber'] ?? ''; // Update the controller text
             if (!result['keepExistingFile']) {
               _gstFilePath = result['gstFilePath'];
               _gstFileType = result['gstFileType'];
@@ -500,119 +522,125 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
     );
   }
 
- Widget _buildLocationButton(BuildContext context) {
-  return FormField<String>(
-    validator: (value) {
-      final locationProvider = Provider.of<LocationProvider>(context, listen: false);
-      if (locationProvider.address == null || locationProvider.address!.isEmpty) {
-        return 'Business address is required';
-      }
-      return null;
-    },
-    builder: (FormFieldState<String> state) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Consumer<LocationProvider>(
-            builder: (context, locationProvider, child) {
-              return GestureDetector(
-                onTap: () => _openMapsScreen(context, locationProvider),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12.0),
-                    color: Colors.grey[300],
-                    border: state.hasError 
-                        ? Border.all(color: Colors.red, width: 1.0)
-                        : null,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(12.0),
-                          topRight: Radius.circular(12.0),
-                        ),
-                        child: Stack(
-                          children: [
-                            Image.asset(
-                              'assets/images/maps.png',
-                              width: double.infinity,
-                              height: 150.0,
-                              fit: BoxFit.cover,
-                            ),
-                            Positioned.fill(
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
-                                child: Container(
-                                  color: Colors.black.withOpacity(0),
+  Widget _buildLocationButton(BuildContext context) {
+    return FormField<String>(
+      validator: (value) {
+        final locationProvider =
+            Provider.of<LocationProvider>(context, listen: false);
+        if (locationProvider.address == null ||
+            locationProvider.address!.isEmpty) {
+          return 'Business address is required';
+        }
+        return null;
+      },
+      builder: (FormFieldState<String> state) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Consumer<LocationProvider>(
+              builder: (context, locationProvider, child) {
+                return GestureDetector(
+                  onTap: () => _openMapsScreen(context, locationProvider),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12.0),
+                      color: Colors.grey[300],
+                      border: state.hasError
+                          ? Border.all(color: Colors.red, width: 1.0)
+                          : null,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12.0),
+                            topRight: Radius.circular(12.0),
+                          ),
+                          child: Stack(
+                            children: [
+                              Image.asset(
+                                'assets/images/maps.png',
+                                width: double.infinity,
+                                height: 150.0,
+                                fit: BoxFit.cover,
+                              ),
+                              Positioned.fill(
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                      sigmaX: 2.5, sigmaY: 2.5),
+                                  child: Container(
+                                    color: Colors.black.withOpacity(0),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(12.0),
-                            bottomRight: Radius.circular(12.0),
+                            ],
                           ),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.location_on, size: 24.0, color: Colors.black),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                locationProvider.address ?? 'Pin Business Location',
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                                style: const TextStyle(fontSize: 16.0, color: Colors.black),
-                              ),
+                        Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.only(
+                              bottomLeft: Radius.circular(12.0),
+                              bottomRight: Radius.circular(12.0),
                             ),
-                          ],
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 16, horizontal: 24),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.location_on,
+                                  size: 24.0, color: Colors.black),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  locationProvider.address ??
+                                      'Pin Business Location',
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  style: const TextStyle(
+                                      fontSize: 16.0, color: Colors.black),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            if (state.hasError)
+              Padding(
+                padding: const EdgeInsets.only(left: 12, top: 8),
+                child: Text(
+                  state.errorText!,
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontSize: 12,
                   ),
                 ),
-              );
-            },
-          ),
-          if (state.hasError)
-            Padding(
-              padding: const EdgeInsets.only(left: 12, top: 8),
-              child: Text(
-                state.errorText!,
-                style: const TextStyle(
-                  color: Colors.red,
-                  fontSize: 12,
-                ),
               ),
-            ),
-        ],
-      );
-    },
-  );
-}
+          ],
+        );
+      },
+    );
+  }
 
-
-
-  Future<void> _openMapsScreen(BuildContext context, LocationProvider locationProvider) async {
+  Future<void> _openMapsScreen(
+      BuildContext context, LocationProvider locationProvider) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const OpenStreetMapPage()),
     );
-    if (result != null && result['location'] != null && result['address'] != null) {
-    locationProvider.setLocation(
-      result['location'] as LatLng,
-      result['address'] as String
-    );
-  }
+    if (result != null &&
+        result['location'] != null &&
+        result['address'] != null) {
+      locationProvider.setLocation(
+          result['location'] as LatLng, result['address'] as String);
+    }
   }
 
   Widget _buildBusinessRoleSection() {
@@ -683,7 +711,8 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
     );
   }
 
-  Map<String, dynamic> _prepareStoreTimesData(StoreDataProvider storeDataProvider) {
+  Map<String, dynamic> _prepareStoreTimesData(
+      StoreDataProvider storeDataProvider) {
     return {
       'storeTimes': storeDataProvider.storeData.storeTimes.map((key, value) {
         return MapEntry(key, value.map((slot) => slot.toMap()).toList());
@@ -693,7 +722,7 @@ class _CreateBusinessAccountScreenState extends State<CreateBusinessAccountScree
     };
   }
 
-Widget _buildCreateAccountButton(StoreDataProvider storeDataProvider) {
+  Widget _buildCreateAccountButton(StoreDataProvider storeDataProvider) {
     return SizedBox(
       width: double.infinity,
       height: 50,
@@ -706,7 +735,8 @@ Widget _buildCreateAccountButton(StoreDataProvider storeDataProvider) {
               onPressed: () async {
                 if (!_formKey.currentState!.validate()) {
                   // Show snackbar for any validation failure
-                  showTopSnackBar(context, 'Please fill all required fields correctly');
+                  showTopSnackBar(
+                      context, 'Please fill all required fields correctly');
                   return;
                 }
 
@@ -718,16 +748,25 @@ Widget _buildCreateAccountButton(StoreDataProvider storeDataProvider) {
                         backgroundColor: Colors.white,
                         surfaceTintColor: Colors.black,
                         title: const Text('Account Verification'),
-                        content: const Text('Your account will be sent for verification again. It might take 3-5 business days to verify your business account.'),
+                        content: const Text(
+                            'Your account will be sent for verification again. It might take 3-5 business days to verify your business account.'),
                         actions: <Widget>[
                           TextButton(
-                            child: const Text('Cancel', style: TextStyle(color: Colors.black,),),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: Colors.black,
+                              ),
+                            ),
                             onPressed: () {
                               Navigator.of(context).pop(false);
                             },
                           ),
                           TextButton(
-                            child: const Text('Proceed', style: TextStyle(color: Colors.black),),
+                            child: const Text(
+                              'Proceed',
+                              style: TextStyle(color: Colors.black),
+                            ),
                             onPressed: () {
                               Navigator.of(context).pop(true);
                             },
@@ -736,13 +775,13 @@ Widget _buildCreateAccountButton(StoreDataProvider storeDataProvider) {
                       );
                     },
                   );
-                  
+
                   if (proceed != true) return;
-                }             
+                }
                 setState(() {
                   _isLoading = true;
                 });
-                
+
                 try {
                   String? logoImageUrl;
                   String? gstFileUrl;
@@ -753,23 +792,30 @@ Widget _buildCreateAccountButton(StoreDataProvider storeDataProvider) {
                   }
 
                   if (_attachedImagePath != null) {
-                    logoImageUrl = await uploadFile(File(_attachedImagePath!), 'business_logos');
+                    logoImageUrl = await uploadFile(
+                        File(_attachedImagePath!), 'business_logos');
                   }
 
                   if (_gstFilePath != null) {
-                    gstFileUrl = await uploadFile(File(_gstFilePath!), 'gst_files');
+                    gstFileUrl =
+                        await uploadFile(File(_gstFilePath!), 'gst_files');
                   }
 
-                  final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+                  final locationProvider =
+                      Provider.of<LocationProvider>(context, listen: false);
                   String? uid = FirebaseAuth.instance.currentUser?.uid;
 
                   Map<String, dynamic> businessData = {
                     'storeverified': false,
-                    'category': _businessCategory.isNotEmpty ? _businessCategory : _businessCategoryController.text,
+                    'category': _businessCategory.isNotEmpty
+                        ? _businessCategory
+                        : _businessCategoryController.text,
                     'name': _businessNameController.text,
                     'description': _descriptionController.text,
-                    'storeTimes': storeDataProvider.storeData.storeTimes.map((key, value) {
-                      return MapEntry(key, value.map((slot) => slot.toMap()).toList());
+                    'storeTimes': storeDataProvider.storeData.storeTimes
+                        .map((key, value) {
+                      return MapEntry(
+                          key, value.map((slot) => slot.toMap()).toList());
                     }),
                     'store_timings': storeDataProvider.getFormattedStoreTimes(),
                     ..._prepareStoreTimesData(storeDataProvider),
@@ -777,7 +823,10 @@ Widget _buildCreateAccountButton(StoreDataProvider storeDataProvider) {
                     'website': websiteController.text,
                     'gst': {
                       'gst_file_url': gstFileUrl ?? existingGstFileUrl ?? '',
-                      'gst_file_type': _gstFileType ?? (widget.docId != null ? await _getExistingGstFileType() : ''),
+                      'gst_file_type': _gstFileType ??
+                          (widget.docId != null
+                              ? await _getExistingGstFileType()
+                              : ''),
                       'gst_no': _gstNumber,
                     },
                     'logo_image_url': logoImageUrl ?? _existingLogoUrl ?? '',
@@ -787,13 +836,13 @@ Widget _buildCreateAccountButton(StoreDataProvider storeDataProvider) {
                     'user_name': userNameController.text,
                     'uid': uid,
                   };
-                  
+
                   if (widget.docId != null) {
                     await FirebaseFirestore.instance
                         .collection('bregisterbusiness')
                         .doc(widget.docId)
                         .update(businessData);
-                    
+
                     if (mounted) {
                       showTopSnackBar(context, 'Account updated successfully');
                       Navigator.pop(context);
@@ -804,20 +853,25 @@ Widget _buildCreateAccountButton(StoreDataProvider storeDataProvider) {
                         .add(businessData);
 
                     if (mounted) {
-                      final storeProvider = Provider.of<StoreDataProvider>(context, listen: false);
-                      final appAuthProvider = Provider.of<AppAuthProvider>(context, listen: false);
+                      final storeProvider = Provider.of<StoreDataProvider>(
+                          context,
+                          listen: false);
+                      final appAuthProvider =
+                          Provider.of<AppAuthProvider>(context, listen: false);
                       storeProvider.updateBusiness(businessData, docRef.id);
                       await Future.wait([
                         appAuthProvider.setLastScreen('catalogue'),
                       ]);
-                      
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CatalogueScreen(),
-                        ), 
-                        (route) => false,
+                      print("hello");
+                      const SnackBar(
+                        content: Text('Account created successfully'),
+                        backgroundColor: Colors.green,
                       );
+                      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EmailVerification(email: _userEmail ?? ''),
+        ),      );
                     }
                   }
                 } catch (e) {
@@ -881,27 +935,32 @@ Widget _buildCreateAccountButton(StoreDataProvider storeDataProvider) {
         ],
       ),
     );
-}
+  }
 
   Future<String?> _getExistingGstFileUrl() async {
-  if (widget.docId == null) return null;
-  final doc = await FirebaseFirestore.instance
-      .collection('bregisterbusiness')
-      .doc(widget.docId)
-      .get();
-  return (doc.data()?['gst'] as Map<String, dynamic>?)?['gst_file_url'] as String?;
-}
+    if (widget.docId == null) return null;
+    final doc = await FirebaseFirestore.instance
+        .collection('bregisterbusiness')
+        .doc(widget.docId)
+        .get();
+    return (doc.data()?['gst'] as Map<String, dynamic>?)?['gst_file_url']
+        as String?;
+  }
 
-Future<String?> _getExistingGstFileType() async {
-  if (widget.docId == null) return null;
-  final doc = await FirebaseFirestore.instance
-      .collection('bregisterbusiness')
-      .doc(widget.docId)
-      .get();
-  return (doc.data()?['gst'] as Map<String, dynamic>?)?['gst_file_type'] as String?;
-}
+  Future<String?> _getExistingGstFileType() async {
+    if (widget.docId == null) return null;
+    final doc = await FirebaseFirestore.instance
+        .collection('bregisterbusiness')
+        .doc(widget.docId)
+        .get();
+    return (doc.data()?['gst'] as Map<String, dynamic>?)?['gst_file_type']
+        as String?;
+  }
 
-   Future<String> uploadFile(File file, String folderName) async {
+  Future<String> uploadFile(File file, String folderName) async {
+    // Note: Firebase Storage may log warnings regarding App Check token retrieval.
+    // These warnings, such as "Error getting App Check token; using placeholder token",
+    // are expected under certain conditions (e.g., too many attempts) and do not affect a successful upload.
     try {
       final storageRef = FirebaseStorage.instance.ref();
       String fileName = path.basename(file.path);
@@ -915,6 +974,7 @@ Future<String?> _getExistingGstFileType() async {
       return '';
     }
   }
+
   @override
   void dispose() {
     _displayWebsiteController.dispose();

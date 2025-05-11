@@ -33,20 +33,17 @@ class _LoginScreenState extends State<LoginScreen> {
         .collection("badminvalues")
         .doc("admin")
         .snapshots();
-        
+
     // Listen to the stream and update the URL
-    _urlStream?.listen(
-      (DocumentSnapshot snapshot) {
-        if (snapshot.exists && mounted) {
-          setState(() {
-            tncUrl = snapshot.get('tnc');
-          });
-        }
-      },
-      onError: (error) {
-        print("Error streaming URL: $error");
+    _urlStream?.listen((DocumentSnapshot snapshot) {
+      if (snapshot.exists && mounted) {
+        setState(() {
+          tncUrl = snapshot.get('tnc');
+        });
       }
-    );
+    }, onError: (error) {
+      print("Error streaming URL: $error");
+    });
   }
 
   Future<void> _launchUrl(String? url) async {
@@ -73,11 +70,11 @@ class _LoginScreenState extends State<LoginScreen> {
     return Consumer<AppAuthProvider>(
       builder: (context, authProvider, child) {
         //print("[LoginScreen] Consumer rebuilding - Current status: ${authProvider.status}");
-        
+
         // Handle navigation based on auth status using WidgetsBinding
         WidgetsBinding.instance.addPostFrameCallback((_) {
           //print("[LoginScreen] Post frame callback - Status: ${authProvider.status}");
-          
+
           if (authProvider.status == AuthStatus.hasStore) {
             _updateLastScreen('catalogue');
             //print("[LoginScreen] Navigating to CatalogueScreen");
@@ -116,7 +113,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Expanded(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Image.asset(
                                         'assets/images/logo.png',
@@ -124,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         height: 150.0,
                                       ),
                                       const Text(
-                                        'Go Extra Mile',
+                                        'GemBiz',
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontSize: 24.0,
@@ -148,7 +146,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   style: TextStyle(fontSize: 14.0),
                                 ),
                                 const SizedBox(height: 16.0),
-                                _buildGoogleButton(context, authProvider.status == AuthStatus.authenticating),
+                                _buildGoogleButton(
+                                    context,
+                                    authProvider.status ==
+                                        AuthStatus.authenticating),
                                 const SizedBox(height: 16.0),
                                 _buildPolicyText(),
                                 const SizedBox(height: 30.0),
@@ -180,8 +181,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildGoogleButton(BuildContext context, bool isLoading) {
     return ElevatedButton(
-      onPressed: isLoading 
-          ? null 
+      onPressed: isLoading
+          ? null
           : () async {
               try {
                 await context.read<AppAuthProvider>().signInWithGoogle();
@@ -222,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
-}
+  }
 
   Widget _buildPolicyText() {
     return RichText(
@@ -233,29 +234,32 @@ class _LoginScreenState extends State<LoginScreen> {
           color: Colors.black,
         ),
         children: [
-          const TextSpan(text: 'I agree to Go Extra Mile '),
+          const TextSpan(text: 'I agree to GemBiz '),
           TextSpan(
             text: 'Terms & Conditions',
             style: const TextStyle(color: Colors.blue),
-            recognizer: TapGestureRecognizer()..onTap = () {
-              _launchUrl(tncUrl);
-            },
+            recognizer: TapGestureRecognizer()
+              ..onTap = () {
+                _launchUrl(tncUrl);
+              },
           ),
           const TextSpan(text: ', '),
           TextSpan(
             text: 'Store Creation',
             style: const TextStyle(color: Colors.blue),
-            recognizer: TapGestureRecognizer()..onTap = () {
-              _launchUrl(tncUrl);
-            },
+            recognizer: TapGestureRecognizer()
+              ..onTap = () {
+                _launchUrl(tncUrl);
+              },
           ),
           const TextSpan(text: ' and '),
           TextSpan(
             text: 'Advertising Policies',
             style: const TextStyle(color: Colors.blue),
-            recognizer: TapGestureRecognizer()..onTap = () {
-              _launchUrl(tncUrl);
-            },
+            recognizer: TapGestureRecognizer()
+              ..onTap = () {
+                _launchUrl(tncUrl);
+              },
           ),
           const TextSpan(text: '.'),
         ],

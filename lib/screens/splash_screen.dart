@@ -17,13 +17,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Navigate to Home after 3 seconds
     Timer(const Duration(seconds: 2), () {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
       );
-    }
-  );
-}
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,18 +34,14 @@ class _SplashScreenState extends State<SplashScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Image.asset(
-              'assets/images/logo.png',  // Add your image here
-              width: 150,  // You can adjust width and height
+              'assets/images/logo.png', // Add your image here
+              width: 150, // You can adjust width and height
               height: 150,
             ),
-            const Text("Go Extra Mile", 
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 20)),
-            const Text("Business", 
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 20)),
+            const Text("GemBiz",
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
+            const Text("Business",
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
           ],
         ),
       ),

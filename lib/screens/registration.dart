@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:gem2/screens/create_account_screen.dart';  // Import flutter_svg package
+import 'package:gem2/screens/create_account_screen.dart'; // Import flutter_svg package
 
 class RegistrationScreen extends StatelessWidget {
   const RegistrationScreen({super.key});
@@ -15,7 +15,7 @@ class RegistrationScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 30),
             const Text(
-              'Go Extra Mile Business',
+              'GemBiz Business',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
@@ -60,15 +60,18 @@ class RegistrationScreen extends StatelessWidget {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const CreateBusinessAccountScreen()),
-                          );// Add navigation or action for registration completion
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const CreateBusinessAccountScreen()),
+                          ); // Add navigation or action for registration completion
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8), // Set a smaller radius for less rounded corners
+                            borderRadius: BorderRadius.circular(
+                                8), // Set a smaller radius for less rounded corners
                           ),
                         ),
                         child: const Text('Register your Business'),

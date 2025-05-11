@@ -4,6 +4,7 @@ import { approveBusinessCategory, fetchPendingBusinessCategories } from "./contr
 import { approveBusinessCatalogue, fetchPendingBusinessCatalogues } from "./controllers/businessCatalogue.js";
 import { approveBusinessSeller, fetchBusinessSellers } from "./controllers/businessSellers.js";
 import { createUser, verifyEmailAndPassword } from "./controllers/authController.js";
+import cors from "cors";
 
 const app = express();
 
@@ -11,7 +12,7 @@ const PORT = 5501;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(cors());
 
 
 

@@ -8,6 +8,7 @@ import {
 import "./index.css";
 import Login from "./screens/login.jsx";
 import Home from "./screens/Home.jsx"; // Import the Home component
+import DashboardOutlet from "./Outlets/DashboardOutlet.jsx";
 
 const router = createBrowserRouter([
   {
@@ -19,8 +20,14 @@ const router = createBrowserRouter([
     element: <Login />,
   },
   {
-    path: "/home",
+    path: "/dashboard",
     element: <Home />,
+    children: [
+      {
+        path: "home",
+        element: <DashboardOutlet />,
+      },
+    ],
   },
 ]);
 

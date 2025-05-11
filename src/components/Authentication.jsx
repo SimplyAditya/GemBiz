@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const Authentication = ({ isOpen, onClose }) => {
   const [step, setStep] = useState("credentials");
@@ -19,8 +19,8 @@ const Authentication = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (step === "otp" && isOpen) {
-      setTimer(60); 
-      clearInterval(timerIntervalRef.current); 
+      setTimer(60);
+      clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = setInterval(() => {
         setTimer((prevTimer) => {
           if (prevTimer <= 1) {
@@ -39,7 +39,6 @@ const Authentication = ({ isOpen, onClose }) => {
     return () => clearInterval(timerIntervalRef.current);
   }, [step, isOpen]);
 
-
   if (!isOpen) {
     return null;
   }
@@ -56,12 +55,12 @@ const Authentication = ({ isOpen, onClose }) => {
       if (response.status === 200) {
         setStep("otp");
         setLoginOTP(response.data.otp);
+        localStorage.setItem("username", response.data.user.name);
       } else {
         setError("Incorrect credentials. Please try again.");
       }
     } catch (err) {
       if (err.response) {
-
         setError("Incorrect credentials. Please try again.");
       } else if (err.request) {
         setError("Network error. Please try again.");
@@ -83,7 +82,7 @@ const Authentication = ({ isOpen, onClose }) => {
     if (enteredOtp == parseInt(loginOTP)) {
       console.log("OTP verified successfully.");
       localStorage.setItem("isLoggedIn", true);
-      navigate("/home");
+      navigate("/dashboard/home");
       handleClose();
     } else {
       console.log("OTP verification failed.");
@@ -104,11 +103,15 @@ const Authentication = ({ isOpen, onClose }) => {
   };
 
   const handleOtpKeyDown = (e, index) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0 && otpInputRefs.current[index - 1]) {
+    if (
+      e.key === "Backspace" &&
+      !otp[index] &&
+      index > 0 &&
+      otpInputRefs.current[index - 1]
+    ) {
       otpInputRefs.current[index - 1].focus();
     }
   };
-
 
   const handleClose = () => {
     setStep("credentials");
@@ -127,7 +130,11 @@ const Authentication = ({ isOpen, onClose }) => {
         {step === "credentials" && (
           <>
             <h2 className="text-2xl font-semibold mb-4 text-center">Login</h2>
-            {error && <p className="text-red-500 text-xs italic mb-4 text-center">{error}</p>}
+            {error && (
+              <p className="text-red-500 text-xs italic mb-4 text-center">
+                {error}
+              </p>
+            )}
             <form onSubmit={handleCredentialsSubmit}>
               <div className="mb-4">
                 <label
@@ -168,7 +175,11 @@ const Authentication = ({ isOpen, onClose }) => {
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
                     disabled={loading}
                   >
-                    {showPassword ? <FaEyeSlash className="h-5 w-5 text-gray-500" /> : <FaEye className="h-5 w-5 text-gray-500" />}
+                    {showPassword ? (
+                      <FaEyeSlash className="h-5 w-5 text-gray-500" />
+                    ) : (
+                      <FaEye className="h-5 w-5 text-gray-500" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -178,11 +189,29 @@ const Authentication = ({ isOpen, onClose }) => {
                 disabled={loading}
               >
                 {loading ? (
-                  <svg className="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin h-5 w-5 text-white mx-auto"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
-                ) : "Sign In"}
+                ) : (
+                  "Sign In"
+                )}
               </button>
             </form>
           </>
@@ -190,7 +219,9 @@ const Authentication = ({ isOpen, onClose }) => {
 
         {step === "otp" && (
           <>
-            <h2 className="text-2xl font-semibold mb-4 text-center">Enter OTP</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-center">
+              Enter OTP
+            </h2>
             <p className="text-sm text-gray-600 mb-4 text-center">
               An OTP has been sent to your email.
             </p>
@@ -209,30 +240,52 @@ const Authentication = ({ isOpen, onClose }) => {
                         key={index}
                         type="text"
                         name="otp"
-                        ref={el => otpInputRefs.current[index] = el}
+                        ref={(el) => (otpInputRefs.current[index] = el)}
                         className="w-12 h-12 text-center border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-black focus:border-black sm:text-lg"
                         maxLength="1"
                         value={data}
-                        onChange={e => handleOtpChange(e.target, index)}
-                        onKeyDown={e => handleOtpKeyDown(e, index)}
-                        onFocus={e => e.target.select()}
+                        onChange={(e) => handleOtpChange(e.target, index)}
+                        onKeyDown={(e) => handleOtpKeyDown(e, index)}
+                        onFocus={(e) => e.target.select()}
                       />
                     );
                   })}
                 </div>
               </div>
-              {error && <p className="text-red-500 text-xs italic mt-2 mb-2 text-center">{error}</p>}
+              {error && (
+                <p className="text-red-500 text-xs italic mt-2 mb-2 text-center">
+                  {error}
+                </p>
+              )}
               <button
                 type="submit"
                 className="w-full bg-black hover:bg-gray-900 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
                 disabled={loading}
               >
                 {loading ? (
-                  <svg className="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin h-5 w-5 text-white mx-auto"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
-                ) : "Verify OTP"}
+                ) : (
+                  "Verify OTP"
+                )}
               </button>
             </form>
             <p className="text-center text-sm text-gray-500 mt-4">

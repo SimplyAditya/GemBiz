@@ -15,14 +15,14 @@ const Login = () => {
       if (isLogin) {
         console.log("User is logged in");
         setIsLoggedIn(true);
-        Navigator("/home");
+        Navigator("/dashboard/home");
       }
     }
     checkLoginStatus();
   }, []);
 
   return (
-    isLoggedIn ? Navigator("/home") : null,
+    isLoggedIn ? Navigator("/dashboard/home") : null,
     (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-lg:max-w-md w-full p-6 space-y-8 md:flex md:items-center md:justify-around">

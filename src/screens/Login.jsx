@@ -1,25 +1,31 @@
-import React from "react";
+import React, { useState } from "react";
+import Authentication from "../components/Authentication"; // Corrected import path
 
 const Login = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full p-6 space-y-8">
-        <div className="flex flex-col items-center">
+      <div className="max-lg:max-w-md w-full p-6 space-y-8 md:flex md:items-center md:justify-around">
+        <div className="flex flex-col items-center md:ms-28">
           <img
-            className="h-20 w-auto"
+            className="max-md:h-20 md:h-52 w-auto"
             src="/Group 3.png"
             alt="Go Extra Mile Logo"
           />
           <h2 className="mt-4 text-2xl font-bold text-gray-900">
             GemBiz
           </h2>
-          <p className="text-sm text-gray-500">One Stop For Your Shop</p>
+          <p className="text-sm text-black">One Stop For Your Shop</p>
         </div>
 
-        <div className="space-y-4">
-          <div className="bg-white p-4 rounded-lg shadow-sm space-y-3">
-            <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
-              <div className="p-2 bg-gray-100 rounded">
+        <div className="space-y-4 bg-[#CBCBCB] p-6 rounded-xl shadow-md">
+          <div className="p-4 space-y-3">
+            <div className="flex items-center space-x-3 p-2 rounded">
+              <div className="p-2 rounded">
                 <svg
                   className="h-6 w-6"
                   fill="none"
@@ -42,8 +48,8 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
-              <div className="p-2 bg-gray-100 rounded">
+            <div className="flex items-center space-x-3 p-2 rounded">
+              <div className="p-2 rounded">
                 <svg
                   className="h-6 w-6"
                   fill="none"
@@ -66,8 +72,8 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
-              <div className="p-2 bg-gray-100 rounded">
+            <div className="flex items-center space-x-3 p-2  rounded">
+              <div className="p-2 rounded">
                 <svg
                   className="h-6 w-6"
                   fill="none"
@@ -91,12 +97,15 @@ const Login = () => {
             </div>
           </div>
 
-          <button className="w-full py-2 px-4 bg-black text-white rounded-md hover:bg-gray-800">
-            Sign up with mobile number
+          <button
+            onClick={openModal}
+            className="w-full py-2 px-4 bg-black text-white rounded-md hover:bg-gray-800"
+          >
+            Login With Email
           </button>
 
           <p className="text-xs text-center text-gray-500">
-            I agree to Go Extra Mile's{" "}
+            I agree to GemBiz's{" "}
             <a href="#" className="text-blue-500">
               Terms & Conditions
             </a>
@@ -115,6 +124,7 @@ const Login = () => {
           </p>
         </div>
       </div>
+      <Authentication isOpen={isModalOpen} onClose={closeModal} />
     </div>
   );
 };

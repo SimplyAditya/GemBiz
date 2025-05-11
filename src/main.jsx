@@ -7,15 +7,20 @@ import {
 } from "react-router-dom";
 import "./index.css";
 import Login from "./screens/login.jsx";
+import Home from "./screens/Home.jsx"; // Import the Home component
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/login" />,
+    element: <Navigate to="/login" replace />, // Added replace for better history management
   },
   {
     path: "/login",
     element: <Login />,
+  },
+  {
+    path: "/home", // Added route for Home
+    element: <Home />,
   },
 ]);
 

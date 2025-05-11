@@ -25,6 +25,19 @@ const generate6AlphaPassword = () => {
   return result;
 };
 
+export const fetchAdmins = async (req, res) => {
+  try {
+    const adminsSnapshot = await getDocs(collection(db, "admin"));
+    const admins = adminsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    res.status(200).json(admins);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching admins", error });
+  }
+};
+
 export const createUser = async (req, res) => {
   const { name, email } = req.body;
 

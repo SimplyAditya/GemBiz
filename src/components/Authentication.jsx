@@ -48,7 +48,7 @@ const Authentication = ({ isOpen, onClose }) => {
     setError("");
     setLoading(true);
     try {
-      const response = await axios.post("https://gem-biz.onrender.com/login", {
+      const response = await axios.post("http://localhost:5501/login", {
         email,
         password,
       });

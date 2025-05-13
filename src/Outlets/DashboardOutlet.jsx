@@ -1,6 +1,6 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios"; // Ensure axios is imported
 import { Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -13,14 +13,16 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 const DashboardOutlet = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Keep for admin users fetch
   const [adminUsers, setAdminUsers] = useState([]);
   const [summaryCounts, setSummaryCounts] = useState(null);
+  const ws = useRef(null);
 
   const fetchAdminUsers = async () => {
     try {
+      setIsLoading(true);
       const response = await axios.get(
-        "https://gem-biz.onrender.com/fetch-admins"
+        "http://localhost:5501/fetch-admins"
       );
       if (response.status === 200) {
         setAdminUsers(response.data);
@@ -29,26 +31,45 @@ const DashboardOutlet = () => {
     } catch (error) {
       console.error("Error fetching admin users:", error);
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchSummaryCounts = async () => {
-    try {
-      const response = await axios.get(
-        "https://gem-biz.onrender.com/fetch-summary-counts"
-      );
-      if (response.status === 200) {
-        setSummaryCounts(response.data);
-      }
-    } catch (error) {
-      console.error("Error fetching summary counts:", error);
+      setIsLoading(false); 
     }
   };
 
   useEffect(() => {
     fetchAdminUsers();
-    fetchSummaryCounts();
+
+    ws.current = new WebSocket("ws://localhost:5501");
+
+    ws.current.onopen = () => {
+      console.log("WebSocket connected for summary counts");
+    };
+
+    ws.current.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === "summary") {
+          setSummaryCounts(message.data);
+        } else if (message.type === "error") {
+          console.error("WebSocket error message:", message.message);
+        }
+      } catch (error) {
+        console.error("Error processing WebSocket message:", error);
+      }
+    };
+
+    ws.current.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    ws.current.onclose = () => {
+      console.log("WebSocket disconnected for summary counts");
+    };
+
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+      }
+    };
   }, []);
 
   const handleViewAll = () => {
@@ -112,10 +133,14 @@ const DashboardOutlet = () => {
         {adminUsers.slice(0, 2).map((user) => (
           <div
             key={user.id}
-            className="p-4 border rounded shadow-md bg-white flex flex-col"
+            className="p-4 border rounded shadow-md bg-white flex flex-col space-y-2" // Added space-y-2
           >
             <h2 className="text-lg font-semibold">{user.name}</h2>
             <p className="text-sm text-gray-600">{user.email}</p>
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-green-600 font-semibold">Status: Active</p>
+              {/* Delete button is intentionally omitted here */}
+            </div>
           </div>
         ))}
       </div>
@@ -143,10 +168,10 @@ const DashboardOutlet = () => {
                       {
                         data: [chart.data.total, chart.data.pending],
                         backgroundColor: index === 0
-                          ? ["#3B82F6", "#93C5FD"] // Blue theme
+                          ? ["#3B82F6", "#93C5FD"] 
                           : index === 1
-                          ? ["#10B981", "#6EE7B7"] // Green theme
-                          : ["#8B5CF6", "#C4B5FD"], // Purple theme
+                          ? ["#10B981", "#6EE7B7"] 
+                          : ["#8B5CF6", "#C4B5FD"],
                         hoverBackgroundColor: index === 0
                           ? ["#2563EB", "#60A5FA"]
                           : index === 1

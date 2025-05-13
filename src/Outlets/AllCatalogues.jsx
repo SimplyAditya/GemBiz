@@ -11,11 +11,11 @@ const AllCatalogues = () => {
   const [selectedCatalogue, setSelectedCatalogue] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const PENDING_CATALOGUES_API_URL = "https://gem-biz.onrender.com/fetch-pending-business-catalogues"; 
-  const ALL_CATALOGUES_API_URL = "https://gem-biz.onrender.com/fetch-all-business-catalogues"; 
-  const APPROVE_CATALOGUE_API_URL = "https://gem-biz.onrender.com/approve-business-catalogue";
-  const DELETE_CATALOGUE_API_URL = "https://gem-biz.onrender.com/delete-catalogue";
-  const SELLERS_API_URL = "https://gem-biz.onrender.com/fetch-all-register-business";
+  const PENDING_CATALOGUES_API_URL = "http://localhost:5501/fetch-pending-business-catalogues"; 
+  const ALL_CATALOGUES_API_URL = "http://localhost:5501/fetch-all-business-catalogues"; 
+  const APPROVE_CATALOGUE_API_URL = "http://localhost:5501/approve-business-catalogue";
+  const DELETE_CATALOGUE_API_URL = "http://localhost:5501/delete-catalogue";
+  const SELLERS_API_URL = "http://localhost:5501/fetch-all-register-business";
 
   useEffect(() => {
     const fetchData = async () => {

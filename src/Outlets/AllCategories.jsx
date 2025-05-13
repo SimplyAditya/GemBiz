@@ -7,10 +7,10 @@ const AllCategories = () => {
   const [allCategories, setAllCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const PENDING_CATEGORIES_API_URL = "https://gem-biz.onrender.com/fetch-pending-business-categories";
-  const ALL_CATEGORIES_API_URL = "https://gem-biz.onrender.com/fetch-all-business-categories";
-  const APPROVE_CATEGORY_API_URL = "https://gem-biz.onrender.com/approve-business-category";
-  const DELETE_CATEGORY_API_URL = "https://gem-biz.onrender.com/delete-category";
+  const PENDING_CATEGORIES_API_URL = "http://localhost:5501/fetch-pending-business-categories";
+  const ALL_CATEGORIES_API_URL = "http://localhost:5501/fetch-all-business-categories";
+  const APPROVE_CATEGORY_API_URL = "http://localhost:5501/approve-business-category";
+  const DELETE_CATEGORY_API_URL = "http://localhost:5501/delete-category";
 
   useEffect(() => {
     const fetchData = async () => {

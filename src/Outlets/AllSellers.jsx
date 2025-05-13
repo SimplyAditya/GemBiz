@@ -12,8 +12,8 @@ const AllSellers = () => {
       setIsLoading(true);
       try {
         const [pendingResponse, allResponse] = await Promise.all([
-          axios.get("https://gem-biz.onrender.com/fetch-business-sellers"),
-          axios.get("https://gem-biz.onrender.com/fetch-all-register-business"),
+          axios.get("http://localhost:5501/fetch-business-sellers"),
+          axios.get("http://localhost:5501/fetch-all-register-business"),
         ]);
 
         if (pendingResponse.status === 200) {
@@ -110,7 +110,7 @@ const AllSellers = () => {
                       <button
                         onClick={async () => {
                           try {
-                            const response = await axios.post("https://gem-biz.onrender.com/approve-business-seller", { id: seller.id });
+                            const response = await axios.post("http://localhost:5501/approve-business-seller", { id: seller.id });
                             if (response.status === 200) {
                               // Move seller from pending to allSellers
                               setPendingSellers(prev => prev.filter(s => s.id !== seller.id));
@@ -128,7 +128,7 @@ const AllSellers = () => {
                     <button
                       onClick={async () => {
                         try {
-                          const response = await axios.delete("https://gem-biz.onrender.com/delete-seller", {
+                          const response = await axios.delete("http://localhost:5501/delete-seller", {
                             data: { id: seller.id },
                           });
                           if (response.status === 200) {
@@ -202,7 +202,7 @@ const AllSellers = () => {
                   <button
                     onClick={async () => {
                       try {
-                        const response = await axios.delete("https://gem-biz.onrender.com/delete-seller", {
+                        const response = await axios.delete("http://localhost:5501/delete-seller", {
                           data: { id: seller.id },
                         });
                         if (response.status === 200) {

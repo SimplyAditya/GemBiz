@@ -1,7 +1,9 @@
 import express from "express";
+import http from "http";
+import { WebSocketServer } from "ws";
 import { sendOTP } from "./controllers/otpController.js";
 import { deleteAdmin, deleteCategory, deleteSeller, deleteCatalogue } from "./controllers/deleteController.js";
-import { fetchSummaryCounts } from "./controllers/summaryController.js";
+import { fetchSummaryCounts, getSummaryData, setWssInstance, listenForSummaryChanges } from "./controllers/summaryController.js";
 import { fetchAllRegisterBusiness } from "./controllers/registerBusiness.js";
 import { approveBusinessCategory, fetchPendingBusinessCategories, fetchAllBusinessCategories } from "./controllers/businessCategories.js";
 import { approveBusinessCatalogue, fetchPendingBusinessCatalogues, fetchAllBusinessCatalogue } from "./controllers/businessCatalogue.js";
@@ -10,6 +12,9 @@ import { createUser, fetchAdmins, verifyEmailAndPassword } from "./controllers/a
 import cors from "cors";
 
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+setWssInstance(wss); // Provide wss instance to controller
 
 const PORT = 5501;
 
@@ -43,6 +48,31 @@ app.delete("/delete-catalogue", deleteCatalogue);
 app.get("/fetch-summary-counts", fetchSummaryCounts);
 app.get("/fetch-all-register-business", fetchAllRegisterBusiness);
 
-app.listen(PORT, () => {
+wss.on("connection", (ws) => {
+  console.log("Client connected for summary counts");
+
+  getSummaryData()
+    .then((summary) => {
+      console.log("Initial summary data sent to client");
+      ws.send(JSON.stringify({ type: "summary", data: summary }));
+    })
+    .catch((error) => {
+      console.error("Error sending initial summary data:", error);
+      ws.send(JSON.stringify({ type: "error", message: "Failed to fetch initial summary" }));
+    });
+
+
+  ws.on("close", () => {
+    console.log("Client disconnected from summary counts");
+  });
+
+  ws.on("error", (error) => {
+    console.error("WebSocket error on client connection:", error);
+  });
+});
+
+server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`WebSocket server for summary counts is running on ws://localhost:${PORT}`);
+  listenForSummaryChanges();
 });

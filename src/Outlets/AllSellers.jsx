@@ -104,6 +104,18 @@ const AllSellers = () => {
                         {seller.mobile}
                       </a>
                     </p>
+                    <div className="flex items-center gap-2 mt-1"> {/* Added a little top margin for spacing if needed */}
+                      {seller.gst?.gst_file_url ? (
+                        <button
+                          onClick={() => window.open(seller.gst.gst_file_url, '_blank')}
+                          className="px-3 py-1 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded focus:outline-none focus:shadow-outline"
+                        >
+                          View Document
+                        </button>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">No document</p>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col gap-2 mt-4">
                     {!seller.storeverified && (
@@ -198,6 +210,18 @@ const AllSellers = () => {
                         {seller.mobile}
                       </a>
                     </p>
+                    <div className="flex items-center gap-2 mt-1"> {/* Added a little top margin for spacing if needed */}
+                      {seller.gst?.gst_file_url ? (
+                        <button
+                          onClick={() => window.open(seller.gst.gst_file_url, '_blank')}
+                          className="px-3 py-1 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded focus:outline-none focus:shadow-outline"
+                        >
+                          View Document
+                        </button>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">No document</p>
+                      )}
+                    </div>
                   </div>
                   <button
                     onClick={async () => {

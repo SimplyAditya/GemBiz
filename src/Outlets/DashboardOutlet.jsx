@@ -38,7 +38,7 @@ const DashboardOutlet = () => {
   useEffect(() => {
     fetchAdminUsers();
 
-    ws.current = new WebSocket("ws://api-gembiz.aditya-bansal.tech");
+    ws.current = new WebSocket("wss://api-gembiz.aditya-bansal.tech");
 
     ws.current.onopen = () => {
       console.log("WebSocket connected for summary counts");

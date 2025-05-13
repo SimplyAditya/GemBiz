@@ -40,7 +40,7 @@ const AllAdminOutlet = () => {
               <button
                 onClick={async () => {
                   try {
-                    const response = await fetch("http://localhost:5501/delete-admin", {
+                    const response = await fetch("https://api-gembiz.aditya-bansal.tech/delete-admin", {
                       method: "DELETE",
                       headers: {
                         "Content-Type": "application/json",

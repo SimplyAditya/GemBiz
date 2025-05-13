@@ -17,7 +17,7 @@ const CreateNewAdmin = ({ isOpen, onClose }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:5501/create-user", {
+      const response = await axios.post("https://api-gembiz.aditya-bansal.tech/create-user", {
         name,
         email,
       });

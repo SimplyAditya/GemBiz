@@ -22,7 +22,7 @@ const DashboardOutlet = () => {
     try {
       setIsLoading(true);
       const response = await axios.get(
-        "http://localhost:5501/fetch-admins"
+        "https://api-gembiz.aditya-bansal.tech/fetch-admins"
       );
       if (response.status === 200) {
         setAdminUsers(response.data);
@@ -38,7 +38,7 @@ const DashboardOutlet = () => {
   useEffect(() => {
     fetchAdminUsers();
 
-    ws.current = new WebSocket("ws://localhost:5501");
+    ws.current = new WebSocket("ws://api-gembiz.aditya-bansal.tech");
 
     ws.current.onopen = () => {
       console.log("WebSocket connected for summary counts");

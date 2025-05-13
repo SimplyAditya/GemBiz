@@ -12,8 +12,8 @@ const AllSellers = () => {
       setIsLoading(true);
       try {
         const [pendingResponse, allResponse] = await Promise.all([
-          axios.get("http://localhost:5501/fetch-business-sellers"),
-          axios.get("http://localhost:5501/fetch-all-register-business"),
+          axios.get("https://api-gembiz.aditya-bansal.tech/fetch-business-sellers"),
+          axios.get("https://api-gembiz.aditya-bansal.tech/fetch-all-register-business"),
         ]);
 
         if (pendingResponse.status === 200) {
@@ -110,7 +110,7 @@ const AllSellers = () => {
                       <button
                         onClick={async () => {
                           try {
-                            const response = await axios.post("http://localhost:5501/approve-business-seller", { id: seller.id });
+                            const response = await axios.post("https://api-gembiz.aditya-bansal.tech/approve-business-seller", { id: seller.id });
                             if (response.status === 200) {
                               // Move seller from pending to allSellers
                               setPendingSellers(prev => prev.filter(s => s.id !== seller.id));
@@ -128,7 +128,7 @@ const AllSellers = () => {
                     <button
                       onClick={async () => {
                         try {
-                          const response = await axios.delete("http://localhost:5501/delete-seller", {
+                          const response = await axios.delete("https://api-gembiz.aditya-bansal.tech/delete-seller", {
                             data: { id: seller.id },
                           });
                           if (response.status === 200) {
@@ -202,7 +202,7 @@ const AllSellers = () => {
                   <button
                     onClick={async () => {
                       try {
-                        const response = await axios.delete("http://localhost:5501/delete-seller", {
+                        const response = await axios.delete("https://api-gembiz.aditya-bansal.tech/delete-seller", {
                           data: { id: seller.id },
                         });
                         if (response.status === 200) {

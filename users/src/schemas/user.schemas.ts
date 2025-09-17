@@ -1,6 +1,6 @@
+import { gql } from 'graphql-tag';
 
-
-export const userSchema = `#graphql
+export const userSchema = gql`
     type User {
         id: ID!
         email: String!

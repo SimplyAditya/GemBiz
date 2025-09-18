@@ -17,6 +17,7 @@ export const userSchema = gql`
 
     type Mutation {
         createUser(input: userInput!): User!
+        upgradeToSeller(input: String!): User!
     }
     type Query {
         getUser(id: ID!): User

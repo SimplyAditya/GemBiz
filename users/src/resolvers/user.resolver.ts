@@ -1,13 +1,12 @@
 import { db } from "../db.ts";
 // import { UserInput } from "../types/user.types.ts";
 
-
 type UserInput = {
-  email: string
-  password: string
-  name: string
-  phone?: string
-}
+  email: string;
+  password: string;
+  name: string;
+  phone?: string;
+};
 
 export const userResolvers = {
   Query: {
@@ -59,6 +58,18 @@ export const userResolvers = {
         throw new Error(insertError.message);
       }
       return user;
+    },
+    upgradeToSeller: async (_: any, { userId }: { userId: string }) => {
+      const { data, error } = await db
+        .from("users")
+        .update({ role: "seller" })
+        .eq("id", userId)
+        .select()
+        .single();
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data;
     },
   },
 };

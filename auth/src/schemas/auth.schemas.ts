@@ -4,7 +4,11 @@ export const authSchema = gql`
   type Auth {
     id: ID!
     email: String!
-    password: String!
+    name: String
+    phone: String
+    role: String
+    access_token: String!
+    refresh_token: String!
   }
 
   input authInput {
@@ -13,9 +17,7 @@ export const authSchema = gql`
   }
 
   type Mutation {
-    validateUser(input: authInput!): Auth
-  }
-  type Query {
-    getAuth(id: ID!): Auth
+    validateUser(input: authInput!): Auth,
+    changePassword(email: String!, currentPassword: String!, newPassword: String!): any,
   }
 `;

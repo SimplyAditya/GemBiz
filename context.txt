@@ -4,12 +4,13 @@ This document provides an overview of the GemBiz project, a microservices-based 
 
 ## Project Structure
 
-The project consists of five main services:
+The project consists of six main services:
 - **gateway**: The main entry point for all API requests. It's an Apollo Gateway that composes the schemas from the other services.
 - **users**: Manages user data and user-related operations.
 - **auth**: Handles user authentication and authorization.
 - **products**: Manages product data and product-related operations.
 - **cart**: Manages shopping cart data and operations.
+- **payments**: Handles payment processing and related operations.
 
 ## Services
 
@@ -17,12 +18,13 @@ The project consists of five main services:
 
 - **Port**: 4000
 - **Framework**: Apollo Gateway
-- **Description**: This service acts as the API gateway. It uses `IntrospectAndCompose` to get the schemas from the `users`, `auth`, `products`, and `cart` services and exposes a single GraphQL endpoint. It also forwards the JWT from the client to the subgraphs.
+- **Description**: This service acts as the API gateway. It uses `IntrospectAndCompose` to get the schemas from the `users`, `auth`, `products`, `cart`, and `payments` services and exposes a single GraphQL endpoint. It also forwards the JWT from the client to the subgraphs.
 - **Subgraph URLs**:
   - `users`: http://localhost:4001/graphql
   - `auth`: http://localhost:4002/graphql
   - `products`: http://localhost:4003/graphql
   - `cart`: http://localhost:4004/graphql
+  - `payments`: http://localhost:4005/graphql
 
 ### 2. Users Service (`users`)
 
@@ -203,6 +205,41 @@ input CartItemInput {
 - `updateCartItemQuantity(userId: ID!, productId: ID!, quantity: Int!): Cart`: Updates the quantity of an item in the user's cart.
 - `clearCart(userId: ID!): Cart`: Clears all items from the user's cart.
 
+### 6. Payments Service (`payments`)
+
+- **Port**: 4005
+- **Framework**: Apollo Server (as a subgraph)
+- **Description**: This service handles payment processing, including creating payment orders and checking their status. It integrates with a payment gateway like Cashfree.
+
+#### GraphQL Schema
+
+**Types**
+
+```graphql
+type PaymentOrder {
+  orderId: String!
+  paymentSessionId: String!
+  orderStatus: String!
+}
+```
+
+**Inputs**
+
+```graphql
+input PaymentInput {
+  productId: ID!
+  amount: Float!
+}
+```
+
+**Queries**
+
+- `getPaymentStatus(orderId: String!): PaymentOrder`: Fetches the status of a payment order.
+
+**Mutations**
+
+- `createPaymentOrder(input: PaymentInput!): PaymentOrder`: Initiates a new payment order for a given product and amount. The user ID is derived from the authentication token.
+
 ## How to Run
 
 The root `package.json` provides a convenient script to run all services concurrently:
@@ -211,4 +248,4 @@ The root `package.json` provides a convenient script to run all services concurr
 npm run dev
 ```
 
-This command will start the `gateway`, `users`, `auth`, `products`, and `cart` services.
+This command will start the `gateway`, `users`, `auth`, `products`, `cart`, and `payments` services.

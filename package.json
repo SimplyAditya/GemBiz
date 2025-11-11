@@ -10,6 +10,7 @@
     "dev:auth":"cd auth && npm run dev",
     "dev:products":"cd products && npm run dev",
     "dev:cart":"cd cart && npm run dev",
+    "dev:payments":"cd payments && npm run dev",
     "dev": "concurrently \"npm:dev:*\"",
     "start": "node dist/index.js"
   },

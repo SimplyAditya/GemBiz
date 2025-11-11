@@ -1,7 +1,7 @@
 import { gql } from 'graphql-tag';
 
 export const userSchema = gql`
-    type User {
+    type User @key(fields: "id") {
         id: ID!
         email: String!
         name: String

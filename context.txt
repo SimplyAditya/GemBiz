@@ -1,0 +1,214 @@
+# GemBiz Project Context
+
+This document provides an overview of the GemBiz project, a microservices-based application.
+
+## Project Structure
+
+The project consists of five main services:
+- **gateway**: The main entry point for all API requests. It's an Apollo Gateway that composes the schemas from the other services.
+- **users**: Manages user data and user-related operations.
+- **auth**: Handles user authentication and authorization.
+- **products**: Manages product data and product-related operations.
+- **cart**: Manages shopping cart data and operations.
+
+## Services
+
+### 1. Gateway (`gateway`)
+
+- **Port**: 4000
+- **Framework**: Apollo Gateway
+- **Description**: This service acts as the API gateway. It uses `IntrospectAndCompose` to get the schemas from the `users`, `auth`, `products`, and `cart` services and exposes a single GraphQL endpoint. It also forwards the JWT from the client to the subgraphs.
+- **Subgraph URLs**:
+  - `users`: http://localhost:4001/graphql
+  - `auth`: http://localhost:4002/graphql
+  - `products`: http://localhost:4003/graphql
+  - `cart`: http://localhost:4004/graphql
+
+### 2. Users Service (`users`)
+
+- **Port**: 4001
+- **Framework**: Apollo Server (as a subgraph)
+- **Database**: Supabase (assumed from `@supabase/supabase-js` dependency and `db` imports)
+- **Description**: This service is responsible for all user-related operations.
+
+#### GraphQL Schema
+
+**Types**
+
+```graphql
+type User {
+    id: ID!
+    email: String!
+    name: String
+    phone: String
+}
+```
+
+**Inputs**
+
+```graphql
+input userInput {
+    email: String!
+    password: String!
+    name: String!
+    phone: String
+}
+```
+
+**Queries**
+
+- `getUser(id: ID!): User`: Fetches a user by their ID.
+
+**Mutations**
+
+- `createUser(input: userInput!): User!`: Creates a new user. It checks if a user with the same email or phone number already exists. It creates an auth user in Supabase and then adds the user details to the `users` table.
+- `upgradeToSeller(input: String!): User!`: Upgrades a user's role to "seller".
+
+### 3. Auth Service (`auth`)
+
+- **Port**: 4002
+- **Framework**: Apollo Server (as a subgraph)
+- **Database**: Supabase (assumed from `@supabase/supabase-js` dependency and `db` imports)
+- **Description**: This service handles user authentication and generates JWTs upon successful login.
+#### GraphQL Schema
+
+**Types**
+
+```graphql
+type Auth {
+    id: ID!
+    email: String!
+    name: String
+    phone: String
+    role: String
+    token: String!
+}
+
+type ChangePasswordResponse {
+    message: String!
+    access_token: String!
+    refresh_token: String!
+}
+```
+
+**Inputs**
+
+```graphql
+input authInput {
+    email: String!
+    password: String!
+}
+```
+
+**Mutations**
+
+- `validateUser(input: authInput!): Auth`: Validates a user's credentials (email and password) using Supabase Auth. If successful, it returns user data along with a JWT.
+- `changePassword(email: String!, currentPassword: String!, newPassword: String!): ChangePasswordResponse`: Changes a user's password after verifying the current password.
+
+### 4. Products Service (`products`)
+
+- **Port**: 4003
+- **Framework**: Apollo Server (as a subgraph)
+- **Database**: Supabase (assumed from `@supabase/supabase-js` dependency and `db` imports)
+- **Description**: This service is responsible for all product-related operations. It includes authorization middleware to ensure only sellers can create, update, or delete products, and that users can only modify their own products. It verifies JWTs from the gateway to get user information.
+
+#### GraphQL Schema
+
+**Types**
+
+```graphql
+type Product @key(fields: "id") {
+  id: ID!
+  name: String!
+  description: String!
+  price: Float!
+  seller: User
+}
+
+extend type User @key(fields: "id") {
+  id: ID! @external
+  products: [Product]
+}
+```
+
+**Inputs**
+
+```graphql
+input ProductInput {
+  name: String!
+  description: String!
+  price: Float!
+}
+
+input UpdateProductInput {
+  name: String
+  description: String
+  price: Float
+}
+```
+
+**Queries**
+
+- `getProduct(id: ID!): Product`: Fetches a product by its ID.
+
+- `getProducts: [Product]`: Fetches all products.
+
+**Mutations**
+
+- `createProduct(input: ProductInput!): Product`: Creates a new product, with the seller ID taken from the authenticated user's context.
+- `updateProduct(id: ID!, input: UpdateProductInput!): Product`: Updates a product. Only the owner can update their product.
+- `deleteProduct(id: ID!): Product`: Deletes a product. Only the owner can delete their product.
+
+### 5. Cart Service (`cart`)
+
+- **Port**: 4004
+- **Framework**: Apollo Server (as a subgraph)
+- **Database**: Supabase (assumed from `@supabase/supabase-js` dependency and `db` imports)
+- **Description**: This service manages shopping cart operations, allowing users to add, remove, and view items in their cart.
+
+#### GraphQL Schema
+
+**Types**
+
+```graphql
+type CartItem {
+  productId: ID!
+  quantity: Int!
+}
+
+type Cart {
+  id: ID!
+  userId: ID!
+  items: [CartItem]!
+}
+```
+
+**Inputs**
+
+```graphql
+input CartItemInput {
+  productId: ID!
+  quantity: Int!
+}
+```
+
+**Queries**
+
+- `getCart(userId: ID!): Cart`: Fetches a user's shopping cart.
+
+**Mutations**
+
+- `addItemToCart(userId: ID!, item: CartItemInput!): Cart`: Adds an item to the user's cart.
+- `removeItemFromCart(userId: ID!, productId: ID!): Cart`: Removes an item from the user's cart.
+- `updateCartItemQuantity(userId: ID!, productId: ID!, quantity: Int!): Cart`: Updates the quantity of an item in the user's cart.
+- `clearCart(userId: ID!): Cart`: Clears all items from the user's cart.
+
+## How to Run
+
+The root `package.json` provides a convenient script to run all services concurrently:
+
+```bash
+npm run dev
+```
+
+This command will start the `gateway`, `users`, `auth`, `products`, and `cart` services.

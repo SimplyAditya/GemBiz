@@ -13,7 +13,7 @@ async function startUserServer() {
     introspection: true,
   });
   const { url } = await startStandaloneServer(server, {
-    listen: { port: 4001 }
+    listen: { port: 4001 },
   });
   console.log(`User service running at ${url}`);
 }

@@ -7,6 +7,11 @@ export const authSchema = gql`
     name: String
     phone: String
     role: String
+    token: String!
+  }
+
+  type ChangePasswordResponse {
+    message: String!
     access_token: String!
     refresh_token: String!
   }
@@ -18,6 +23,6 @@ export const authSchema = gql`
 
   type Mutation {
     validateUser(input: authInput!): Auth,
-    changePassword(email: String!, currentPassword: String!, newPassword: String!): any,
+    changePassword(email: String!, currentPassword: String!, newPassword: String!): ChangePasswordResponse,
   }
 `;

@@ -1,5 +1,10 @@
-import { access } from "fs";
 import { db } from "../db.ts";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET || "a-super-secret-key-that-is-at-least-32-characters-long";
 
 export const authResolvers = {
   Mutation: {
@@ -25,14 +30,22 @@ export const authResolvers = {
       if (db_error) {
         throw new Error(db_error.message);
       }
+
+      const user = {
+        id: data.user.id,
+        email: data.user.email!,
+        role: user_data.role || "customer",
+      };
+
+      const token = jwt.sign(user, JWT_SECRET, { expiresIn: "1h" });
+
       return {
         id: data.user.id,
         email: data.user.email!,
         name: user_data.name || "",
         phone: user_data.phone || "",
         role: user_data.role || "customer",
-        access_token: data.session?.access_token || "",
-        refresh_token: data.session?.refresh_token || "",
+        token,
       };
     },
     changePassword: async (

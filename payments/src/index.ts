@@ -1,25 +1,24 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
-import { typeDefs } from "./schemas/payments.schemas.js";
-import { resolvers } from "./resolvers/payments.resolver.js";
+import { buildSubgraphSchema } from "@apollo/subgraph";
+import { typeDefs } from "./schemas/payments.schemas.ts";
+import { resolvers } from "./resolvers/payments.resolver.ts";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 
-interface MyContext {
-  userId?: string;
-}
 
-const server = new ApolloServer<MyContext>({
-  typeDefs,
-  resolvers,
-});
-
-const port = process.env.PORT ? parseInt(process.env.PORT) : 4005;
 const JWT_SECRET = process.env.JWT_SECRET || "a-super-secret-key-that-is-at-least-32-characters-long";
 
-const startServer = async () => {
+async function startPaymentServer() {
+  const server = new ApolloServer({
+    schema: buildSubgraphSchema({
+      typeDefs: typeDefs,
+      resolvers: resolvers,
+    }),
+    introspection: true,
+  });
   const { url } = await startStandaloneServer(server, {
-    listen: { port },
+    listen: { port: 4005 },
     context: async ({ req }) => {
       const token = req.headers.authorization || "";
       if (token) {
@@ -33,8 +32,9 @@ const startServer = async () => {
       return {};
     },
   });
-
   console.log(`🚀 Payments service ready at ${url}`);
-};
+}
 
-startServer();
+startPaymentServer().catch((error) => {
+  console.error("Error starting the payments service:", error.message);
+});

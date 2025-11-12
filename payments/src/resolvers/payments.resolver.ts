@@ -1,5 +1,5 @@
 import { Cashfree } from "cashfree-pg";
-import { db } from "../db.js";
+import { db } from "../db.ts";
 import "dotenv/config";
 
 // Configure Cashfree SDK
@@ -32,7 +32,7 @@ export const resolvers = {
     createPaymentOrder: async (
       _: any,
       { productId }: { productId: string },
-      context: { user?: { userId: string } }
+      context: any
     ) => {
       const { user } = context;
       if (!user || !user.userId) {

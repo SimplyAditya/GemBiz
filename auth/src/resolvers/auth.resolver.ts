@@ -1,4 +1,4 @@
-import { db } from "../db.ts";
+import { db } from "../db.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
@@ -7,6 +7,14 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || "a-super-secret-key-that-is-at-least-32-characters-long";
 
 export const authResolvers = {
+  Query: {
+    me: async (_: any, __: any, context: any) => {
+      if (!context.user) {
+        throw new Error("Not authenticated");
+      }
+      return context.user;
+    },
+  },
   Mutation: {
     validateUser: async (
       _parent: any,

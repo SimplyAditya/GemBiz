@@ -1,5 +1,5 @@
 import { Cashfree } from "cashfree-pg";
-import { db } from "../db.ts";
+import { db } from "../db.js";
 import "dotenv/config";
 
 // Configure Cashfree SDK
@@ -9,7 +9,7 @@ const CASHFREE_CLIENT_SECRET = process.env.CASHFREE_CLIENT_SECRET || "<x-client-
 const cashfree = new Cashfree( Cashfree.SANDBOX, CASHFREE_CLIENT_ID, CASHFREE_CLIENT_SECRET);
 
 
-const PRODUCTS_SERVICE_URL = process.env.PRODUCTS_SERVICE_URL || "http://localhost:4001/graphql";
+const PRODUCTS_SERVICE_URL = process.env.PRODUCTS_SERVICE_URL || "http://localhost:4003/graphql";
 
 export const resolvers = {
   Query: {
@@ -35,10 +35,10 @@ export const resolvers = {
       context: any
     ) => {
       const { user } = context;
-      if (!user || !user.userId) {
+      if (!user || !user.id) {
         throw new Error("User is not authenticated");
       }
-      const userId = user.userId;
+      const userId = user.id;
 
       // 1. Fetch product details (amount) from products service
       let productAmount: number;
@@ -47,9 +47,8 @@ export const resolvers = {
       try {
         const productQuery = `
           query GetProduct($id: ID!) {
-            product(id: $id) {
+            getProduct(id: $id) {
               price
-              currency
             }
           }
         `;
@@ -70,7 +69,7 @@ export const resolvers = {
           throw new Error("Could not fetch product details");
         }
 
-        const product = productData.data.product;
+        const product = productData.data.getProduct;
         if (!product || !product.price) {
           throw new Error("Product not found or price not available");
         }
@@ -118,7 +117,7 @@ export const resolvers = {
           customer_email: "customer@example.com", // Placeholder
         },
         order_meta: {
-          return_url: "https://www.cashfree.com/devstudio/thankyou", // From user's curl example
+          return_url: `http://localhost:4000/payments/return?order_id={order_id}&status={order_status}`, // From user's curl example
         },
       };
 
@@ -174,7 +173,7 @@ export const resolvers = {
           const actualCashfreeStatus = cashfreeOrderDetails.data.order_status;
 
           // Map Cashfree statuses to internal statuses
-          if (actualCashfreeStatus === "PAID" || actualCashfreeStatus === "ACTIVE") {
+          if (actualCashfreeStatus === "PAID" || actualCashfreeStatus === "SUCCESS") {
             verifiedStatus = "PAID";
           } else if (actualCashfreeStatus === "ACTIVE") {
             verifiedStatus = "PENDING"; // Or a specific FLAGGED status

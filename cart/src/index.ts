@@ -1,8 +1,8 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import { buildSubgraphSchema } from "@apollo/subgraph";
-import { cartSchema } from "./schemas/cart.schemas.ts";
-import { cartResolvers } from "./resolvers/cart.resolver.ts";
+import { cartSchema } from "./schemas/cart.schemas.js";
+import { cartResolvers } from "./resolvers/cart.resolver.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 

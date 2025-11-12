@@ -1,4 +1,4 @@
-import { db } from "../db.ts";
+import { db } from "../db.js";
 
 // If the context is not set up to provide this, these checks will fail.
 const requireCustomer = (resolver : any) => (parent : any, args : any, context : any, info : any) => {

@@ -1,4 +1,4 @@
-import gql from "graphql-tag";
+import { gql } from 'graphql-tag';
 
 export const authSchema = gql`
   type Auth {
@@ -19,6 +19,14 @@ export const authSchema = gql`
   input authInput {
     email: String!
     password: String!
+  }
+
+  extend type Query {
+    me: User
+  }
+
+  extend type User @key(fields: "id") {
+    id: ID! @external
   }
 
   type Mutation {

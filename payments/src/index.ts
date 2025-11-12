@@ -1,8 +1,8 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import { buildSubgraphSchema } from "@apollo/subgraph";
-import { typeDefs } from "./schemas/payments.schemas.ts";
-import { resolvers } from "./resolvers/payments.resolver.ts";
+import { typeDefs } from "./schemas/payments.schemas.js";
+import { resolvers } from "./resolvers/payments.resolver.js";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 

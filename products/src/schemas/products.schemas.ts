@@ -1,9 +1,9 @@
-import gql from "graphql-tag";
+import { gql } from "graphql-tag";
 
 export const productSchema = gql`
   type Product @key(fields: "id") {
     id: ID!
-    name: String!
+    name: String
     description: String!
     price: Float!
     seller: User

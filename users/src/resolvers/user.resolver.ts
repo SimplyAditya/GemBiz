@@ -1,4 +1,4 @@
-import { db } from "../db.ts";
+import { db } from "../db.js";
 // import { UserInput } from "../types/user.types.ts";
 
 type UserInput = {

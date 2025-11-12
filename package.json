@@ -6,13 +6,19 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev:gateway":"cd gateway && npm run dev",
+    "start:gateway":"cd gateway && npm run start",
     "dev:users":"cd users && npm run dev",
+    "start:users":"cd users && npm run start",
     "dev:auth":"cd auth && npm run dev",
+    "start:auth":"cd auth && npm run start",
     "dev:products":"cd products && npm run dev",
+    "start:products":"cd products && npm run start",
     "dev:cart":"cd cart && npm run dev",
+    "start:cart":"cd cart && npm run start",
     "dev:payments":"cd payments && npm run dev",
+    "start:payments":"cd payments && npm run start",
     "dev": "concurrently \"npm:dev:*\"",
-    "start": "node dist/index.js"
+    "start": "concurrently \"npm:start:*\""
   },
   "repository": {
     "type": "git",

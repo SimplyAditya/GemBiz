@@ -1,8 +1,8 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import { buildSubgraphSchema } from "@apollo/subgraph";
-import { userSchema } from "./schemas/user.schemas.ts";
-import { userResolvers } from "./resolvers/user.resolver.ts";
+import { userSchema } from "./schemas/user.schemas.js";
+import { userResolvers } from "./resolvers/user.resolver.js";
 
 async function startUserServer() {
   const server = new ApolloServer({

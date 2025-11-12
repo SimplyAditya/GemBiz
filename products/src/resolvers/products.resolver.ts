@@ -1,4 +1,4 @@
-import { db } from "../db.ts";
+import { db } from "../db.js";
 // import { Product } from "../types/products.types.ts";
 
 type Product = {
@@ -147,6 +147,9 @@ export const productResolvers = {
     ),
   },
   Product: {
+    __resolveReference(product: { id: string }) {
+      return db.from("products").select("*").eq("id", product.id).single().then(({ data }) => data);
+    },
     seller(product: Product) {
       return { __typename: "User", id: product.seller_id };
     },

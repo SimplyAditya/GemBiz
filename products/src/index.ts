@@ -1,8 +1,8 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import { buildSubgraphSchema } from "@apollo/subgraph";
-import { productSchema } from "./schemas/products.schemas.ts";
-import { productResolvers } from "./resolvers/products.resolver.ts";
+import { productSchema } from "./schemas/products.schemas.js";
+import { productResolvers } from "./resolvers/products.resolver.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 

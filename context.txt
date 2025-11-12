@@ -173,15 +173,29 @@ input UpdateProductInput {
 **Types**
 
 ```graphql
+type Cart @key(fields: "id") {
+  id: ID!
+  user: User
+  userId: ID!
+  items: [CartItem!]
+}
+
 type CartItem {
+  id: ID!
+  cart: Cart
+  cartId: ID!
+  product: Product!
   productId: ID!
   quantity: Int!
 }
 
-type Cart {
-  id: ID!
-  userId: ID!
-  items: [CartItem]!
+extend type User @key(fields: "id") {
+  id: ID! @external
+  cart: Cart
+}
+
+extend type Product @key(fields: "id") {
+  id: ID! @external
 }
 ```
 
@@ -196,14 +210,14 @@ input CartItemInput {
 
 **Queries**
 
-- `getCart(userId: ID!): Cart`: Fetches a user's shopping cart.
+- `getCart: Cart`: Fetches the authenticated user's shopping cart.
 
 **Mutations**
 
-- `addItemToCart(userId: ID!, item: CartItemInput!): Cart`: Adds an item to the user's cart.
-- `removeItemFromCart(userId: ID!, productId: ID!): Cart`: Removes an item from the user's cart.
-- `updateCartItemQuantity(userId: ID!, productId: ID!, quantity: Int!): Cart`: Updates the quantity of an item in the user's cart.
-- `clearCart(userId: ID!): Cart`: Clears all items from the user's cart.
+- `addItemToCart(item: CartItemInput!): Cart`: Adds an item to the authenticated user's cart.
+- `updateCartItem(productId: ID!, quantity: Int!): Cart`: Updates the quantity of an item in the authenticated user's cart.
+- `removeCartItem(productId: ID!): Cart`: Removes an item from the authenticated user's cart.
+- `clearCart: Cart`: Clears all items from the authenticated user's cart.
 
 ### 6. Payments Service (`payments`)
 

@@ -25,6 +25,7 @@ async function startProductServer() {
       if (token) {
         try {
           const user = jwt.verify(token.replace("Bearer ", ""), JWT_SECRET);
+          console.log("Authenticated user:", user);
           return { user };
         } catch (e) {
           console.error("Invalid token", e);

@@ -22,6 +22,19 @@ export const userResolvers = {
       return data;
     },
   },
+  User: {
+    __resolveReference: async (user: { id: string }) => {
+      const { data, error } = await db
+        .from("users")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data;
+    },
+  },
   Mutation: {
     createUser: async (_: any, { input }: { input: UserInput }) => {
       const { name, email, password, phone } = input;

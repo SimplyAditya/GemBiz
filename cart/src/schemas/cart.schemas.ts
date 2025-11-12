@@ -1,14 +1,19 @@
-import {gql} from "graphql-tag";
+import { gql } from "graphql-tag";
 
 export const cartSchema = gql`
   type Cart @key(fields: "id") {
     id: ID!
     user: User
+    userId: ID!
     items: [CartItem!]
   }
 
   type CartItem {
+    id: ID!
+    cart: Cart
+    cartId: ID!
     product: Product!
+    productId: ID!
     quantity: Int!
   }
 

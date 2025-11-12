@@ -13,7 +13,8 @@ type Product = {
 // This middleware assumes that the user's information (including role and id) is available in the context.
 // If the context is not set up to provide this, these checks will fail.
 const requireSeller = (resolver : any) => (parent : any, args: any, context: any, info: any) => {
-  if (context.user?.role !== "seller") {
+  if (!context.user || context.user.role?.toLowerCase() !== "seller") {
+    console.log("Unauthorized access attempt by user:", context);
     throw new Error("You must be a seller to perform this action.");
   }
   return resolver(parent, args, context, info);
@@ -34,12 +35,25 @@ export const productResolvers = {
       return data;
     },
     async getProducts() {
-      const { data, error } = await db.from("products").select("*");
+      const { data, error } = await db
+        .from("products")
+        .select(`
+          *,
+          users!seller_id (
+            id,
+            name,
+            email
+          )
+        `);
       if (error) {
         console.error("Error fetching products:", error);
         throw new Error(error.message);
       }
-      return data;
+      console.log("Fetched products from DB:", data);
+      return data.map(product => ({
+        ...product,
+        seller: product.users
+      }));
     },
   },
   Mutation: {
@@ -151,4 +165,3 @@ export const productResolvers = {
     },
   },
 };
-

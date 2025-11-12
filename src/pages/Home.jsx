@@ -101,7 +101,7 @@ const Home = () => {
                   <h4 className="text-xl font-semibold text-gray-800 mb-2">{product.name}</h4>
                   <p className="text-gray-600 text-sm mb-3">{product.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-blue-600">${product.price.toFixed(2)}</span>
+                    <span className="text-2xl font-bold text-blue-600">₹{product.price.toFixed(2)}</span>
                   </div>
                   {product.seller && (
                     <p className="text-gray-500 text-xs mt-2">Sold by: {product.seller.name || 'N/A'}</p>

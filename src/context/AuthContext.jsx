@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { API_URL } from '../config'; // Assuming API_URL is defined here
 
 const AuthContext = createContext(null);
@@ -9,6 +10,14 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const navigate = useNavigate();
 
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+    navigate('/login'); // Redirect to login after logout
+  };
+
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
@@ -17,6 +26,36 @@ export const AuthProvider = ({ children }) => {
       setUser(JSON.parse(storedUser));
     }
   }, []);
+
+  const { error: meError } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => {
+      if (!token) return null;
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          query: `query Me { me { id } }`,
+        }),
+      });
+      const result = await response.json();
+      if (result.errors) {
+        throw new Error(result.errors[0].message);
+      }
+      return result.data.me;
+    },
+    enabled: !!token,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (meError) {
+      logout();
+    }
+  }, [meError]);
 
   const login = async (email, password) => {
     try {
@@ -91,14 +130,6 @@ export const AuthProvider = ({ children }) => {
       console.error('Signup error:', error);
       return { success: false, error: error.message };
     }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
-    navigate('/login'); // Redirect to login after logout
   };
 
   const value = {

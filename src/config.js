@@ -1,1 +1,1 @@
-export const API_URL = "http://localhost:4000/";
+export const API_URL = "https://api-gembiz.aditya-bansal.tech/";

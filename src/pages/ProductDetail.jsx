@@ -69,6 +69,7 @@ const ProductDetail = () => {
                 orderId
                 cashfreeSessionId
                 orderStatus
+                razorpayKeyId
               }
             }
           `,
@@ -86,15 +87,88 @@ const ProductDetail = () => {
   const handleBuyNow = () => {
     createPaymentOrderMutation.mutate(product.id, {
       onSuccess: (data) => {
-        // Use Cashfree to checkout
-        if (window.Cashfree) {
-          const cf = window.Cashfree({ mode: "sandbox" });
-          cf.checkout({
-            paymentSessionId: data.cashfreeSessionId,
-            redirectTarget: "_self",
-          });
+        // Check if Razorpay or Cashfree based on response
+        if (data.razorpayKeyId) {
+          // ============ RAZORPAY FLOW ============
+          if (window.Razorpay) {
+            const options = {
+              key: data.razorpayKeyId,
+              amount: product.price * 100, // Amount in paise
+              currency: "INR",
+              name: "GemBiz",
+              description: product.name,
+              order_id: data.cashfreeSessionId, // This is razorpay_order_id
+              handler: function (response) {
+                // Payment successful, verify on backend
+                fetch(API_URL, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({
+                    query: `
+                      mutation HandleRazorpayCallback(
+                        $razorpay_order_id: String!,
+                        $razorpay_payment_id: String!,
+                        $razorpay_signature: String!
+                      ) {
+                        handleRazorpayCallback(
+                          razorpay_order_id: $razorpay_order_id,
+                          razorpay_payment_id: $razorpay_payment_id,
+                          razorpay_signature: $razorpay_signature
+                        ) {
+                          orderId
+                          orderStatus
+                        }
+                      }
+                    `,
+                    variables: {
+                      razorpay_order_id: response.razorpay_order_id,
+                      razorpay_payment_id: response.razorpay_payment_id,
+                      razorpay_signature: response.razorpay_signature,
+                    },
+                  }),
+                })
+                  .then((res) => res.json())
+                  .then((result) => {
+                    if (result.data?.handleRazorpayCallback?.orderStatus === 'PAID') {
+                      alert('Payment successful!');
+                      window.location.href = '/';
+                    } else {
+                      alert('Payment verification failed');
+                    }
+                  })
+                  .catch((error) => {
+                    console.error('Error verifying payment:', error);
+                    alert('Payment verification failed');
+                  });
+              },
+              prefill: {
+                name: user?.name || '',
+                email: user?.email || '',
+              },
+              theme: {
+                color: "#6366f1",
+              },
+            };
+
+            const razorpay = new window.Razorpay(options);
+            razorpay.open();
+          } else {
+            alert('Razorpay SDK not loaded');
+          }
         } else {
-          alert('Cashfree SDK not loaded');
+          // ============ CASHFREE FLOW ============
+          if (window.Cashfree) {
+            const cf = window.Cashfree({ mode: "sandbox" });
+            cf.checkout({
+              paymentSessionId: data.cashfreeSessionId,
+              redirectTarget: "_self",
+            });
+          } else {
+            alert('Cashfree SDK not loaded');
+          }
         }
       },
     });

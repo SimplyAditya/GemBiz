@@ -5,18 +5,18 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev:gateway":"cd gateway && npm run dev",
-    "start:gateway":"cd gateway && npm run start",
-    "dev:users":"cd users && npm run dev",
-    "start:users":"cd users && npm run start",
-    "dev:auth":"cd auth && npm run dev",
-    "start:auth":"cd auth && npm run start",
-    "dev:products":"cd products && npm run dev",
-    "start:products":"cd products && npm run start",
-    "dev:cart":"cd cart && npm run dev",
-    "start:cart":"cd cart && npm run start",
-    "dev:payments":"cd payments && npm run dev",
-    "start:payments":"cd payments && npm run start",
+    "dev:gateway": "cd gateway && npm run dev",
+    "start:gateway": "cd gateway && npm run start",
+    "dev:users": "cd users && npm run dev",
+    "start:users": "cd users && npm run start",
+    "dev:auth": "cd auth && npm run dev",
+    "start:auth": "cd auth && npm run start",
+    "dev:products": "cd products && npm run dev",
+    "start:products": "cd products && npm run start",
+    "dev:cart": "cd cart && npm run dev",
+    "start:cart": "cd cart && npm run start",
+    "dev:payments": "cd payments && npm run dev",
+    "start:payments": "cd payments && npm run start",
     "dev": "concurrently \"npm:dev:*\"",
     "start": "concurrently \"npm:start:*\""
   },
@@ -31,5 +31,9 @@
   "bugs": {
     "url": "https://github.com/SimplyAditya/GemBiz/issues"
   },
-  "homepage": "https://github.com/SimplyAditya/GemBiz#readme"
+  "homepage": "https://github.com/SimplyAditya/GemBiz#readme",
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "razorpay": "^2.9.6"
+  }
 }

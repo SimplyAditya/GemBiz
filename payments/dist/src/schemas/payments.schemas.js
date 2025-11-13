@@ -11,6 +11,7 @@ exports.typeDefs = (0, graphql_tag_1.gql) `
     userId: ID!
     orderAmount: Float!
     orderCurrency: String!
+    razorpayKeyId: String
   }
 
   type Query {
@@ -20,6 +21,11 @@ exports.typeDefs = (0, graphql_tag_1.gql) `
   type Mutation {
     createPaymentOrder(productId: ID!): PaymentOrder
     handleCashfreeCallback(order_id: String!): PaymentOrder
+    handleRazorpayCallback(
+      razorpay_order_id: String!
+      razorpay_payment_id: String!
+      razorpay_signature: String!
+    ): PaymentOrder
   }
 `;
 //# sourceMappingURL=payments.schemas.js.map

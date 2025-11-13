@@ -9,6 +9,7 @@ export const typeDefs = gql`
     userId: ID!
     orderAmount: Float!
     orderCurrency: String!
+    razorpayKeyId: String
   }
 
   type Query {
@@ -18,5 +19,10 @@ export const typeDefs = gql`
   type Mutation {
     createPaymentOrder(productId: ID!): PaymentOrder
     handleCashfreeCallback(order_id: String!): PaymentOrder
+    handleRazorpayCallback(
+      razorpay_order_id: String!
+      razorpay_payment_id: String!
+      razorpay_signature: String!
+    ): PaymentOrder
   }
 `;

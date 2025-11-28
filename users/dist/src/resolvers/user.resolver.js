@@ -12,6 +12,25 @@ export const userResolvers = {
             }
             return data;
         },
+        getBusiness: async (_, { uid }) => {
+            const { data, error } = await db
+                .from("business")
+                .select(`
+          *,
+          gst (
+            id,
+            gst_file_url,
+            gst_file_type,
+            gst_no
+          )
+        `)
+                .eq("uid", uid)
+                .single();
+            if (error) {
+                throw new Error(error.message);
+            }
+            return data;
+        },
     },
     User: {
         __resolveReference: async (user) => {
@@ -25,6 +44,9 @@ export const userResolvers = {
             }
             return data;
         },
+    },
+    Business: {
+        gst_id: (business) => business.gst,
     },
     Mutation: {
         createUser: async (_, { input }) => {
@@ -68,6 +90,44 @@ export const userResolvers = {
                 .update({ role: "seller" })
                 .eq("id", userId)
                 .select()
+                .single();
+            if (error) {
+                throw new Error(error.message);
+            }
+            return data;
+        },
+        addBusiness: async (_, { input }) => {
+            // First, insert GST data
+            const { gst, ...businessData } = input;
+            let gstId = null;
+            if (gst && (gst.gst_file_url || gst.gst_file_type || gst.gst_no)) {
+                const { data: gstData, error: gstError } = await db
+                    .from("gst")
+                    .insert([gst])
+                    .select()
+                    .single();
+                if (gstError) {
+                    throw new Error(gstError.message);
+                }
+                gstId = gstData.id;
+            }
+            // Then insert business data with GST reference
+            const businessInsertData = {
+                ...businessData,
+                gst: gstId
+            };
+            const { data, error } = await db
+                .from("business")
+                .insert([businessInsertData])
+                .select(`
+          *,
+          gst (
+            id,
+            gst_file_url,
+            gst_file_type,
+            gst_no
+          )
+        `)
                 .single();
             if (error) {
                 throw new Error(error.message);

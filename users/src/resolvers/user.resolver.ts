@@ -100,45 +100,58 @@ export const userResolvers = {
       return data;
     },
     addBusiness: async (_: any, { input }: { input: BusinessInput }) => {
-      // First, insert GST data
-      const { gst, ...businessData } = input;
-      let gstId = null;
+      try {
+        // First, insert GST data
+        const { gst, ...businessData } = input;
+        let gstId = null;
 
-      if (gst && (gst.gst_file_url || gst.gst_file_type || gst.gst_no)) {
-        const { data: gstData, error: gstError } = await db
-          .from("gst")
-          .insert([gst])
-          .select()
-          .single();
-        if (gstError) {
-          throw new Error(gstError.message);
+        if (gst && (gst.gst_file_url || gst.gst_file_type || gst.gst_no)) {
+          console.log('Inserting GST data:', gst);
+          const { data: gstData, error: gstError } = await db
+            .from("gst")
+            .insert([gst])
+            .select()
+            .single();
+          if (gstError) {
+            console.error('GST insertion error:', gstError);
+            throw new Error(`GST insertion failed: ${gstError.message}. Details: ${JSON.stringify(gstError)}`);
+          }
+          gstId = gstData.id;
+          console.log('GST inserted successfully with ID:', gstId);
         }
-        gstId = gstData.id;
-      }
 
-      // Then insert business data with GST reference
-      const businessInsertData = {
-        ...businessData,
-        gst_id: gstId
-      };
+        // Then insert business data with GST reference
+        const businessInsertData = {
+          ...businessData,
+          gst: gstId
+        };
 
-      const { data, error } = await db
-        .from("business")
-        .insert([businessInsertData])
-        .select(`
-          *,
-          gst (
-            id,
-            gst_file_url,
-            gst_file_type,
-            gst_no
-          )
-        `)
-        .single();
-      if (error) {
-        throw new Error(error.message);
+        console.log('Inserting business data:', businessInsertData);
+
+        const { data, error } = await db
+          .from("business")
+          .insert([businessInsertData])
+          .select(`
+            *,
+            gst (
+              id,
+              gst_file_url,
+              gst_file_type,
+              gst_no
+            )
+          `)
+          .single();
+        if (error) {
+          console.error('Business insertion error:', error);
+          throw new Error(`Business insertion failed: ${error.message}. Details: ${JSON.stringify(error)}. Insert data: ${JSON.stringify(businessInsertData)}`);
+        }
+
+        console.log('Business inserted successfully:', data);
+        return data;
+      } catch (error: any) {
+        console.error('addBusiness mutation error:', error);
+        throw new Error(`addBusiness failed: ${error.message}`);
       }
-      return data;
     },
   },
 };

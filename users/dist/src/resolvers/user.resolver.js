@@ -46,7 +46,7 @@ export const userResolvers = {
         },
     },
     Business: {
-        gst_id: (business) => business.gst,
+        gst_id: (business) => business.gst?.id || business.gst_id,
     },
     Mutation: {
         createUser: async (_, { input }) => {
@@ -114,7 +114,7 @@ export const userResolvers = {
             // Then insert business data with GST reference
             const businessInsertData = {
                 ...businessData,
-                gst: gstId
+                gst_id: gstId
             };
             const { data, error } = await db
                 .from("business")

@@ -5,6 +5,26 @@ import { API_URL } from '../config';
 import { useCart } from '../context/CartContext'; // Import useCart
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
+// Function to get product image based on name
+const getProductImage = (productName) => {
+  const name = productName.toLowerCase();
+
+  if (name.includes('pixel') || name.includes('8')) {
+    return '/pixel8.webp';
+  }
+  if (name.includes('mac') || name.includes('laptop') || name.includes('computer')) {
+    return '/mac.jpeg';
+  }
+  if (name.includes('phone') || name.includes('mobile') || name.includes('smartphone')) {
+    return '/phone.jpg';
+  }
+  if (name.includes('watch') || name.includes('smartwatch')) {
+    return '/watch.jpg';
+  }
+
+  return null; // No matching image found
+};
+
 const fetchProduct = async (productId) => {
   const response = await fetch(API_URL, {
     method: 'POST',
@@ -198,16 +218,26 @@ const ProductDetail = () => {
     );
   }
 
+  const productImage = getProductImage(product.name);
+
   return (
     <div className="container mx-auto p-8 bg-white shadow-lg rounded-lg mt-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Product Image (Placeholder) */}
+        {/* Product Image */}
         <div className="flex items-center justify-center bg-gray-100 rounded-lg p-4">
-          <img
-            src={`https://via.placeholder.com/400x300?text=${product.name.replace(/\s/g, '+')}`}
-            alt={product.name}
-            className="max-w-full h-auto rounded-lg"
-          />
+          {productImage ? (
+            <img
+              src={productImage}
+              alt={product.name}
+              className="max-w-full h-auto rounded-lg object-cover"
+            />
+          ) : (
+            <img
+              src={`https://via.placeholder.com/400x300?text=${product.name.replace(/\s/g, '+')}`}
+              alt={product.name}
+              className="max-w-full h-auto rounded-lg"
+            />
+          )}
         </div>
 
         {/* Product Details */}

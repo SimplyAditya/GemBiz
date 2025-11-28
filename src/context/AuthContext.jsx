@@ -132,11 +132,47 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const addBusiness = async (businessData) => {
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          query: `
+            mutation AddBusiness($input: businessInput!) {
+              addBusiness(input: $input) {
+                id
+                name
+                email
+                category
+                storeverified
+              }
+            }
+          `,
+          variables: { input: businessData },
+        }),
+      });
+
+      const result = await response.json();
+      if (result.errors) {
+        throw new Error(result.errors[0].message);
+      }
+      return { success: true, data: result.data.addBusiness };
+    } catch (error) {
+      console.error('Add business error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   const value = {
     user,
     token,
     login,
     signup,
+    addBusiness,
     logout,
     isAuthenticated: !!token,
   };

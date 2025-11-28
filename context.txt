@@ -20,11 +20,11 @@ The project consists of six main services:
 - **Framework**: Apollo Gateway
 - **Description**: This service acts as the API gateway. It uses `IntrospectAndCompose` to get the schemas from the `users`, `auth`, `products`, `cart`, and `payments` services and exposes a single GraphQL endpoint. It also forwards the JWT from the client to the subgraphs.
 - **Subgraph URLs**:
-  - `users`: http://localhost:4001/graphql
-  - `auth`: http://localhost:4002/graphql
-  - `products`: http://localhost:4003/graphql
-  - `cart`: http://localhost:4004/graphql
-  - `payments`: http://localhost:4005/graphql
+  - `users`: https://api-gembiz.adityabansal.in/users/graphql
+  - `auth`: https://api-gembiz.adityabansal.in/auth/graphql
+  - `products`: https://api-gembiz.adityabansal.in/products/graphql
+  - `cart`: https://api-gembiz.adityabansal.in/cart/graphql
+  - `payments`: https://api-gembiz.adityabansal.in/payments/graphql
 
 ### 2. Users Service (`users`)
 

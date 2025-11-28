@@ -5,6 +5,26 @@ import { API_URL } from '../config';
 import { useCart } from '../context/CartContext'; // Import useCart
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
+// Function to get product image based on name
+const getProductImage = (productName) => {
+  const name = productName.toLowerCase();
+
+  if (name.includes('pixel') || name.includes('8')) {
+    return '/pixel8.webp';
+  }
+  if (name.includes('mac') || name.includes('laptop') || name.includes('computer')) {
+    return '/mac.jpeg';
+  }
+  if (name.includes('phone') || name.includes('mobile') || name.includes('smartphone')) {
+    return '/phone.jpg';
+  }
+  if (name.includes('watch') || name.includes('smartwatch')) {
+    return '/watch.jpg';
+  }
+
+  return null; // No matching image found
+};
+
 const fetchProducts = async () => {
   const response = await fetch(API_URL, {
     method: 'POST',
@@ -68,20 +88,31 @@ const ProductList = () => {
     <div className="container mx-auto p-4">
       <h2 className="text-3xl font-bold mb-6">Our Products</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <div key={product.id} className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
-            <Link to={`/products/${product.id}`} className="block"> {/* Link wraps content except button */}
-              <div className="p-4">
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">{product.name}</h3>
-                <p className="text-gray-600 text-sm mb-3">{product.description}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-blue-600">₹{product.price.toFixed(2)}</span>
-                </div>
-                {product.seller && (
-                  <p className="text-gray-500 text-xs mt-2">Sold by: {product.seller.name || 'N/A'}</p>
+        {products.map((product) => {
+          const productImage = getProductImage(product.name);
+          return (
+            <div key={product.id} className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
+              <Link to={`/products/${product.id}`} className="block"> {/* Link wraps content except button */}
+                {productImage && (
+                  <div className="h-48 overflow-hidden">
+                    <img
+                      src={productImage}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 )}
-              </div>
-            </Link>
+                <div className="p-4">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">{product.name}</h3>
+                  <p className="text-gray-600 text-sm mb-3">{product.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-blue-600">₹{product.price.toFixed(2)}</span>
+                  </div>
+                  {product.seller && (
+                    <p className="text-gray-500 text-xs mt-2">Sold by: {product.seller.name || 'N/A'}</p>
+                  )}
+                </div>
+              </Link>
             {user?.role !== 'seller' && (
               <div className="p-4 pt-0"> {/* Button outside the link */}
                 <button
@@ -93,8 +124,9 @@ const ProductList = () => {
                 </button>
               </div>
             )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

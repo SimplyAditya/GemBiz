@@ -5,6 +5,26 @@ import { useAuth } from '../context/AuthContext';
 import ProductDetailModal from '../components/ProductDetailModal';
 import AddProductModal from '../components/AddProductModal';
 
+// Function to get product image based on name
+const getProductImage = (productName) => {
+  const name = productName.toLowerCase();
+
+  if (name.includes('pixel') || name.includes('8')) {
+    return '/pixel8.webp';
+  }
+  if (name.includes('mac') || name.includes('laptop') || name.includes('computer')) {
+    return '/mac.jpeg';
+  }
+  if (name.includes('phone') || name.includes('mobile') || name.includes('smartphone')) {
+    return '/phone.jpg';
+  }
+  if (name.includes('watch') || name.includes('smartwatch')) {
+    return '/watch.jpg';
+  }
+
+  return null; // No matching image found
+};
+
 const fetchProducts = async (user) => {
   let query;
   let variables = {};
@@ -170,11 +190,20 @@ const Home = () => {
                 <div className="bg-white rounded-xl shadow-md overflow-hidden transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
                   {/* Product Image */}
                   <div className="relative h-56 bg-gradient-to-br from-indigo-100 to-purple-100 overflow-hidden">
-                    <img
-                      src={`https://via.placeholder.com/400x300/6366f1/ffffff?text=${encodeURIComponent(product.name)}`}
-                      alt={product.name}
-                      className="w-full h-full object-cover transform transition-transform duration-300 group-hover:scale-110"
-                    />
+                    {(() => {
+                      const productImage = getProductImage(product.name);
+                      return productImage ? (
+                        <img
+                          src={productImage}
+                          alt={product.name}
+                          className="w-full h-full object-cover transform transition-transform duration-300 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-indigo-100">
+                          <span className="text-indigo-600 text-lg font-semibold">{product.name}</span>
+                        </div>
+                      );
+                    })()}
                     <div className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

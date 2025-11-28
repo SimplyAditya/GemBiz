@@ -18,8 +18,6 @@ export type Business = {
   category: string
   name: string
   description: string
-  storeTimes: string  // JSON string
-  store_timings: string
   email: string
   website?: string
   gst_id?: string
@@ -45,8 +43,6 @@ export type BusinessInput = {
   category: string
   name: string
   description: string
-  storeTimes: string  // JSON string
-  store_timings: string
   email: string
   website?: string
   gst: GSTInput

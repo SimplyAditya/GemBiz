@@ -13,8 +13,6 @@ export const userSchema = gql `
         category: String!
         name: String!
         description: String!
-        storeTimes: String!  # JSON string for Map<String, List<Map<String, dynamic>>>
-        store_timings: String!
         email: String!
         website: String
         gst_id: String
@@ -54,8 +52,6 @@ export const userSchema = gql `
         category: String!
         name: String!
         description: String!
-        storeTimes: String!  # JSON string
-        store_timings: String!
         email: String!
         website: String
         gst: gstInput!

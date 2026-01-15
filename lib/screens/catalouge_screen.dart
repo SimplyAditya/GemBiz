@@ -20,6 +20,57 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
   int _currentIndex = 0;
   final FirestoreService _firestoreService = FirestoreService();
 
+  // Map item names to asset images
+  String? _getItemImageAsset(String itemName) {
+    final name = itemName.toLowerCase();
+
+    // Check for specific product matches
+    if (name.contains('pixel') || name.contains('8')) {
+      return 'assets/images/Pixel 8.webp';
+    }
+    if (name.contains('mac') || name.contains('laptop') || name.contains('computer')) {
+      return 'assets/images/mac.jpeg';
+    }
+    if (name.contains('phone') || name.contains('mobile') || name.contains('smartphone')) {
+      return 'assets/images/phone.jpg';
+    }
+    if (name.contains('watch') || name.contains('smartwatch')) {
+      return 'assets/images/watch.jpg';
+    }
+
+    // Return null if no match found, will fall back to network image or placeholder
+    return null;
+  }
+
+  // Build item image with priority: asset image > network image > placeholder
+  Widget _buildItemImage(ItemModel item) {
+    final assetImage = _getItemImageAsset(item.name);
+
+    if (assetImage != null) {
+      // Use asset image if name matches
+      return Image.asset(
+        assetImage,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    } else if (item.imageUrls.isNotEmpty) {
+      // Fall back to network image
+      return Image.network(
+        item.imageUrls[0],
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) {
+          return const Center(child: Icon(Icons.image, size: 40));
+        },
+      );
+    } else {
+      // Show placeholder if no images available
+      return const Center(child: Icon(Icons.image, size: 40));
+    }
+  }
+
   void _navigateToAddItemScreen() async {
     Navigator.push(
       context,
@@ -121,16 +172,8 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                      image: item.imageUrls.isNotEmpty
-                          ? DecorationImage(
-                              image: NetworkImage(item.imageUrls[0]),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
                     ),
-                    child: item.imageUrls.isEmpty
-                        ? const Center(child: Icon(Icons.image, size: 40))
-                        : null,
+                    child: _buildItemImage(item),
                   ),
                   if (item.hideItem)
                     Container(

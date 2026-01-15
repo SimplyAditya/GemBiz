@@ -1,10 +1,9 @@
 // ignore_for_file: constant_identifier_names, avoid_print
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:gem2/services/graphql_service.dart';
 
 enum AuthStatus {
   initial,
@@ -16,21 +15,18 @@ enum AuthStatus {
 }
 
 class AppAuthProvider with ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
   static const String IS_LOGGED_IN_KEY = 'is_logged_in';
   static const String HAS_STORE_KEY = 'has_store';
   static const String USER_UID_KEY = 'user_uid';
+  static const String AUTH_TOKEN_KEY = 'auth_token';
 
   AuthStatus _status = AuthStatus.initial;
   AuthStatus get status => _status;
 
-  User? get currentUser => _auth.currentUser;
+  String? _currentUserUid;
+  String? get currentUserUid => _currentUserUid;
 
   AppAuthProvider() {
-    //print("[AuthProvider] Initializing");
     _initializeAuthState();
   }
 
@@ -44,11 +40,11 @@ class AppAuthProvider with ChangeNotifier {
     await prefs.setString('lastScreen', screenName);
   }
 
-  // Method to save status to SharedPreferences
   Future<void> _saveUserState({
     required bool isLoggedIn,
     required bool? hasStore,
     String? uid,
+    String? token,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(IS_LOGGED_IN_KEY, isLoggedIn);
@@ -58,159 +54,191 @@ class AppAuthProvider with ChangeNotifier {
     if (uid != null) {
       await prefs.setString(USER_UID_KEY, uid);
     }
+    if (token != null) {
+      await prefs.setString(AUTH_TOKEN_KEY, token);
+    }
     print("[AuthProvider] Saved user state - LoggedIn: $isLoggedIn, HasStore: $hasStore, UID: $uid");
   }
 
-    Future _initializeAuthState() async {
+  Future _initializeAuthState() async {
     print("[AuthProvider] Starting auth state initialization");
     
-    // First check SharedPreferences
     final prefs = await SharedPreferences.getInstance();
-
-      print("[AuthProvider] SharedPreferences initial values:");
-      print("isLoggedIn: ${prefs.getBool(IS_LOGGED_IN_KEY)}");
-      print("hasStore: ${prefs.getBool(HAS_STORE_KEY)}");
-      print("userUid: ${prefs.getString(USER_UID_KEY)}");
-      print("lastScreen: ${prefs.getString('lastScreen')}");
-      print("onboarding: ${prefs.getBool('onboarding')}");
-
     final isLoggedIn = prefs.getBool(IS_LOGGED_IN_KEY) ?? false;
     final hasStore = prefs.getBool(HAS_STORE_KEY) ?? false;
     final savedUid = prefs.getString(USER_UID_KEY);
+    final token = prefs.getString(AUTH_TOKEN_KEY);
 
-    if (isLoggedIn && savedUid != null) {
+    if (isLoggedIn && savedUid != null && token != null) {
+      _currentUserUid = savedUid;
       _status = hasStore ? AuthStatus.hasStore : AuthStatus.noStore;
-      notifyListeners();
+    } else {
+      _status = AuthStatus.unauthenticated;
     }
-
-    // Then listen to Firebase auth changes
-    _auth.authStateChanges().listen((User? user) async {
-      print("[AuthProvider] Auth state changed - User: ${user?.uid}");
-      
-      if (user == null) {
-        print("[AuthProvider] No user found, setting status to unauthenticated");
-        _status = AuthStatus.unauthenticated;
-        await _saveUserState(isLoggedIn: false, hasStore: null, uid: null);
-      } else {
-        final storeExists = await _checkStoreExistence(user.uid);
-        final currentHasStore = prefs.getBool(HAS_STORE_KEY) ?? false;
-
-        print("[AuthProvider] User found, checking store existence for UID: ${user.uid}");
-
-       if (currentHasStore != storeExists) {
-            _status = storeExists ? AuthStatus.hasStore : AuthStatus.noStore;
-            await _saveUserState(
-              isLoggedIn: true,
-              hasStore: storeExists,
-              uid: user.uid,
-            );
-          }
-        print("[AuthProvider] Store check complete - HasStore: $storeExists, Status: $_status");
-      }
-      notifyListeners();
-      print("[AuthProvider] Notified listeners of new status: $_status");
-    });
+    notifyListeners();
   }
 
-  Future<bool> _checkStoreExistence(String uid) async {
+  Future<void> login(String email, String password) async {
     try {
-      print("[AuthProvider] Starting store existence check for UID: $uid");
-      print("[AuthProvider] Accessing collection: 'bregisterbusiness'");
-      
-       final QuerySnapshot querySnapshot = await _firestore
-          .collection('bregisterbusiness')
-          .where('uid', isEqualTo: uid)
-          .get();
-      
-      print("[AuthProvider] Found ${querySnapshot.docs.length} documents with matching UID");
-      
-      return querySnapshot.docs.isNotEmpty;
-    } catch (e, stackTrace) {
-      print("[AuthProvider] Error checking store existence: $e");
-      print("[AuthProvider] Stack trace: $stackTrace");
-      return false;
-    }
-  }
-
-  Future<void> signInWithGoogle() async {
-    try {
-      print("[AuthProvider] Starting Google Sign In process");
       _status = AuthStatus.authenticating;
       notifyListeners();
 
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        print("[AuthProvider] Google Sign In cancelled by user");
-        _status = AuthStatus.unauthenticated;
-        await _saveUserState(isLoggedIn: false, hasStore: null);
-        notifyListeners();
-        return;
-      }
+      final client = GraphQLService.initClient().value;
 
-      print("[AuthProvider] Google Sign In successful for email: ${googleUser.email}");
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+      const String loginMutation = r'''
+        mutation ValidateUser($input: authInput!) {
+          validateUser(input: $input) {
+            id
+            token
+            role
+          }
+        }
+      ''';
+
+      final MutationOptions options = MutationOptions(
+        document: gql(loginMutation),
+        variables: {
+          'input': {
+            'email': email,
+            'password': password,
+          },
+        },
       );
 
-      final userCredential = await _auth.signInWithCredential(credential);
-      final user = userCredential.user;
+      final QueryResult result = await client.mutate(options);
 
-      if (user != null) {
-        print("[AuthProvider] Firebase Auth successful for UID: ${user.uid}");
-        await _saveUserToFirestore(user);
-
-        final hasStore = await _checkStoreExistence(user.uid);
-        print("[AuthProvider] Store check after sign in - HasStore: $hasStore");
-        _status = hasStore ? AuthStatus.hasStore : AuthStatus.noStore;
-        await _saveUserState(isLoggedIn: true, hasStore: hasStore, uid: user.uid,);
-        print("[AuthProvider] Updated status to: $_status");
+      if (result.hasException) {
+        print("Login Exception: ${result.exception.toString()}");
+        _status = AuthStatus.unauthenticated;
         notifyListeners();
-      } 
+        throw Exception(result.exception.toString());
+      }
+
+      final data = result.data?['validateUser'];
+      if (data != null) {
+        final String token = data['token'];
+        final String uid = data['id'];
+        final String? role = data['role'];
+        
+        // Check if user has a store (seller role implies store existence in this context, 
+        // or we might need a separate query if role isn't enough)
+        // For now, let's assume we need to check store existence separately or derive it
+        // If role is 'seller', they might have a store.
+        
+        // Let's check store existence via another query if needed, or assume based on role
+        // For this migration, let's query store existence
+        
+        final bool hasStore = await _checkStoreExistence(uid);
+
+        _currentUserUid = uid;
+        _status = hasStore ? AuthStatus.hasStore : AuthStatus.noStore;
+        
+        await _saveUserState(
+          isLoggedIn: true,
+          hasStore: hasStore,
+          uid: uid,
+          token: token,
+        );
+        
+        notifyListeners();
+      } else {
+        throw Exception("Login failed: No data returned");
+      }
     } catch (e) {
-      print("[AuthProvider] Error during Google Sign In: $e");
+      print("Login Error: $e");
       _status = AuthStatus.unauthenticated;
-      await _saveUserState(isLoggedIn: false, hasStore: null);
       notifyListeners();
       rethrow;
     }
   }
 
-  Future<void> _saveUserToFirestore(User user) async {
-    try {
-      print("[AuthProvider] Saving user data to Firestore for UID: ${user.uid}");
-      await _firestore.collection('busers').doc(user.uid).set({
-        'uid': user.uid,
-        'email': user.email,
-        'lastLogin': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-      print("[AuthProvider] Successfully saved user data to Firestore");
-    } catch (e) {
-      print("[AuthProvider] Error saving user to Firestore: $e");
-    }
+  Future<bool> _checkStoreExistence(String uid) async {
+    // TODO: Implement GraphQL query to check if store exists
+    // For now returning false to force registration flow or true if we assume
+    // We need a backend resolver for this.
+    // Assuming we can query user and check if they have products or a specific store field
+    // Or we can add a 'hasStore' field to the User type in backend
+    
+    // Temporary: return false so we can test registration flow, or true if we want to skip
+    return false; 
   }
 
   Future<void> logout() async {
     try {
-      print("[AuthProvider] Starting logout process");
-      await Future.wait([
-        _auth.signOut(),
-        _googleSignIn.signOut(),
-      ]);
-      
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('lastScreen'); // Clear last screen on logout
+      await prefs.remove('lastScreen');
       await prefs.remove(IS_LOGGED_IN_KEY);
       await prefs.remove(HAS_STORE_KEY);
       await prefs.remove(USER_UID_KEY);
-      
+      await prefs.remove(AUTH_TOKEN_KEY);
+
+      _currentUserUid = null;
       _status = AuthStatus.unauthenticated;
-      print("[AuthProvider] Logout successful, status set to unauthenticated");
       notifyListeners();
     } catch (e) {
-      print("[AuthProvider] Error during logout: $e");
+      print("Logout Error: $e");
       rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> addBusiness(Map<String, dynamic> businessData) async {
+    try {
+      final client = GraphQLService.initClient().value;
+
+      const String addBusinessMutation = r'''
+        mutation AddBusiness($input: businessInput!) {
+          addBusiness(input: $input) {
+            id
+            name
+            gst_id
+          }
+        }
+      ''';
+
+      final MutationOptions options = MutationOptions(
+        document: gql(addBusinessMutation),
+        variables: {
+          'input': businessData,
+        },
+      );
+
+      final QueryResult result = await client.mutate(options);
+
+      if (result.hasException) {
+        print("Add Business Exception: ${result.exception.toString()}");
+        return {
+          'success': false,
+          'error': result.exception.toString(),
+        };
+      }
+
+      final data = result.data?['addBusiness'];
+      if (data != null) {
+        // Update auth status to indicate user now has a store
+        _status = AuthStatus.hasStore;
+        await _saveUserState(
+          isLoggedIn: true,
+          hasStore: true,
+          uid: _currentUserUid,
+        );
+        notifyListeners();
+
+        return {
+          'success': true,
+          'data': data,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': 'Failed to create business account',
+        };
+      }
+    } catch (e) {
+      print("Add Business Error: $e");
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
     }
   }
 }

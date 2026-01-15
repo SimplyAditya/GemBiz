@@ -1,14 +1,10 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-//import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gem2/providers/auth_provider.dart';
-//import 'package:gem2/providers/store_data_provider.dart';
 import 'package:gem2/screens/create_account_screen.dart';
 import 'package:gem2/screens/login_screen.dart';
 import 'package:gem2/widgets/snackbar.dart';
-//import 'package:gem2/screens/registration.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -25,24 +21,36 @@ class BusinessDetailsScreen extends StatefulWidget {
 }
 
 class _BusinessDetailsScreenState extends State<BusinessDetailsScreen> {
-  late Future<DocumentSnapshot> _businessDataFuture;
-  late Stream<DocumentSnapshot> _verificationStream;
+  late Future<Map<String, dynamic>> _businessDataFuture;
+  bool _isVerified = false;
 
   @override
   void initState() {
     super.initState();
     _businessDataFuture = _fetchBusinessData();
-     _verificationStream = FirebaseFirestore.instance
-        .collection('bregisterbusiness')
-        .doc(widget.docId)
-        .snapshots();
+    // TODO: Implement real-time verification status updates with GraphQL subscriptions
+    // For now, using a static verification status
+    _isVerified = false;
   }
 
-  Future<DocumentSnapshot> _fetchBusinessData() {
-    return FirebaseFirestore.instance
-        .collection('bregisterbusiness')
-        .doc(widget.docId)
-        .get();
+  Future<Map<String, dynamic>> _fetchBusinessData() async {
+    // TODO: Replace with actual GraphQL query to fetch business data
+    // For now, returning mock data
+    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
+
+    return {
+      'name': 'Sample Business',
+      'category': 'Retail',
+      'description': 'A sample business description',
+      'gst': {'gst_no': '22AAAAA0000A1Z5'},
+      'mobile': '+91 9876543210',
+      'email': 'business@example.com',
+      'website': 'https://example.com',
+      'address': '123 Business Street, City, State 123456',
+      'user_type': 'Business Owner',
+      'store_timings': '9:00 AM - 9:00 PM',
+      'logo_image_url': '',
+    };
   }
 
   void _refreshBusinessData() {
@@ -52,37 +60,15 @@ class _BusinessDetailsScreenState extends State<BusinessDetailsScreen> {
   }
 
   Widget _buildVerificationStatus() {
-    return StreamBuilder<DocumentSnapshot>(
-      stream: _verificationStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Text(
-            'Checking verification status...',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-          );
-        }
-
-        if (!snapshot.hasData) {
-          return const SizedBox.shrink();
-        }
-
-        final data = snapshot.data!.data() as Map<String, dynamic>?;
-        final isVerified = data?['storeverified'] ?? false;
-
-        return Text(
-          isVerified 
-              ? 'Your Store is verified.'
-              : 'Your Store Verification is still Under Pending.',
-          style: TextStyle(
-            fontSize: 12,
-            color: isVerified ? Colors.green : Colors.orange,
-            fontWeight: isVerified ? FontWeight.w600 : FontWeight.normal,
-          ),
-        );
-      },
+    return Text(
+      _isVerified
+          ? 'Your Store is verified.'
+          : 'Your Store Verification is still Under Pending.',
+      style: TextStyle(
+        fontSize: 12,
+        color: _isVerified ? Colors.green : Colors.orange,
+        fontWeight: _isVerified ? FontWeight.w600 : FontWeight.normal,
+      ),
     );
   }
 
@@ -293,22 +279,17 @@ class _BusinessDetailsScreenState extends State<BusinessDetailsScreen> {
         foregroundColor: Colors.black,
       ),
       backgroundColor: Colors.white,
-      body: FutureBuilder<DocumentSnapshot>(
+      body: FutureBuilder<Map<String, dynamic>>(
         future: _businessDataFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return _buildShimmerEffect();
           }
-          if (!snapshot.hasData || snapshot.data == null || snapshot.data!.data() == null) {
-          return const Center(child: Text('No business data found.'));
-        }
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const Center(child: Text('No business data found.'));
+          }
 
-          final data = snapshot.data!.data();
-            if (data == null) {
-              return const Center(child: Text('Business data is empty.'));
-            }
-          //Map<String, dynamic> businessData = snapshot.data!.data() as Map<String, dynamic>;
-          Map<String, dynamic> businessData = data as Map<String, dynamic>;
+          final businessData = snapshot.data!;
 
           String logoUrl = businessData['logo_image_url'] ?? '';
           String storeTimings = businessData['store_timings'] ?? '';

@@ -1,7 +1,6 @@
 // ignore_for_file: avoid_print, deprecated_member_use
 
 import 'package:flutter/gestures.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:gem2/widgets/snackbar.dart';
 import 'package:provider/provider.dart';
@@ -19,31 +18,14 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  String? tncUrl;
-  Stream<DocumentSnapshot>? _urlStream;
+  String? tncUrl = "https://gembiz.adityabansal.in/terms"; // Default URL
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _initializeStream();
-  }
-
-  void _initializeStream() {
-    _urlStream = FirebaseFirestore.instance
-        .collection("badminvalues")
-        .doc("admin")
-        .snapshots();
-
-    // Listen to the stream and update the URL
-    _urlStream?.listen((DocumentSnapshot snapshot) {
-      if (snapshot.exists && mounted) {
-        setState(() {
-          tncUrl = snapshot.get('tnc');
-        });
-      }
-    }, onError: (error) {
-      print("Error streaming URL: $error");
-    });
+    // _initializeStream(); // Removed Firestore stream
   }
 
   Future<void> _launchUrl(String? url) async {
@@ -66,25 +48,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    //print("[LoginScreen] Building LoginScreen");
     return Consumer<AppAuthProvider>(
       builder: (context, authProvider, child) {
-        //print("[LoginScreen] Consumer rebuilding - Current status: ${authProvider.status}");
-
-        // Handle navigation based on auth status using WidgetsBinding
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          //print("[LoginScreen] Post frame callback - Status: ${authProvider.status}");
-
           if (authProvider.status == AuthStatus.hasStore) {
             _updateLastScreen('catalogue');
-            //print("[LoginScreen] Navigating to CatalogueScreen");
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const CatalogueScreen()),
               (route) => false,
             );
           } else if (authProvider.status == AuthStatus.noStore) {
             _updateLastScreen('registration');
-            //print("[LoginScreen] Navigating to RegistrationScreen");
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const RegistrationScreen()),
               (route) => false,
@@ -141,12 +115,29 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                                 const Text(
-                                  'Login or Signup',
+                                  'Login',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(fontSize: 14.0),
                                 ),
                                 const SizedBox(height: 16.0),
-                                _buildGoogleButton(
+                                TextField(
+                                  controller: _emailController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Email',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                                const SizedBox(height: 16.0),
+                                TextField(
+                                  controller: _passwordController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Password',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  obscureText: true,
+                                ),
+                                const SizedBox(height: 16.0),
+                                _buildLoginButton(
                                     context,
                                     authProvider.status ==
                                         AuthStatus.authenticating),
@@ -161,16 +152,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                 ),
-                // Overlay loading indicator
-                // if (authProvider.status == AuthStatus.authenticating)
-                //   Container(
-                //     color: Colors.black.withOpacity(0.3),
-                //     child: const Center(
-                //       child: CircularProgressIndicator(
-                //         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                //       ),
-                //     ),
-                //   ),
               ],
             ),
           ),
@@ -179,16 +160,19 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildGoogleButton(BuildContext context, bool isLoading) {
+  Widget _buildLoginButton(BuildContext context, bool isLoading) {
     return ElevatedButton(
       onPressed: isLoading
           ? null
           : () async {
               try {
-                await context.read<AppAuthProvider>().signInWithGoogle();
+                await context.read<AppAuthProvider>().login(
+                  _emailController.text,
+                  _passwordController.text,
+                );
               } catch (e) {
                 if (context.mounted) {
-                  showTopSnackBar(context, 'Failed to sign in with Google');
+                  showTopSnackBar(context, 'Failed to sign in: $e');
                 }
               }
             },
@@ -202,22 +186,18 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            height: 25.0,
-            width: 25.0,
-            child: isLoading
-                ? const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    strokeWidth: 2.5,
-                  )
-                : Image.asset(
-                    'assets/images/google_icon.png',
-                    fit: BoxFit.contain,
-                  ),
-          ),
-          const SizedBox(width: 10),
+          if (isLoading)
+            const SizedBox(
+              height: 25.0,
+              width: 25.0,
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                strokeWidth: 2.5,
+              ),
+            ),
+          if (isLoading) const SizedBox(width: 10),
           Text(
-            isLoading ? 'Please wait...' : 'Continue with Google',
+            isLoading ? 'Please wait...' : 'Login',
             style: const TextStyle(color: Colors.white),
           ),
         ],
@@ -269,6 +249,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 }

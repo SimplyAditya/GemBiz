@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ContactOptionsBottomSheet extends StatelessWidget {
   final String phoneNumber = '+91 7799145959';
@@ -12,28 +11,19 @@ class ContactOptionsBottomSheet extends StatelessWidget {
 
   Future<String> _getMessageWithUserDetails() async {
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) return 'Error: User not logged in';
-
-      final QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('bregisterbusiness')
-          .where('uid', isEqualTo: currentUser.uid)
-          .limit(1)
-          .get();
-
-      if (querySnapshot.docs.isEmpty) {
-        return 'Error: Business details not found';
-      }
-
-      final data = querySnapshot.docs.first.data() as Map<String, dynamic>;
+      final prefs = await SharedPreferences.getInstance();
+      final userEmail = prefs.getString('user_email') ?? 'N/A';
+      final userName = prefs.getString('user_name') ?? 'N/A';
+      final mobile = prefs.getString('mobile') ?? 'N/A';
+      final businessName = prefs.getString('business_name') ?? 'N/A';
 
       return '''Hi GemBiz team, please verify my Business account.
 
 Contact Details:
-Business Name: ${data['name'] ?? 'N/A'}
-Name: ${data['user_name'] ?? 'N/A'}
-Contact Number: ${data['mobile'] ?? 'N/A'}
-Email: ${data['email'] ?? 'N/A'}''';
+Business Name: $businessName
+Name: $userName
+Contact Number: $mobile
+Email: $userEmail''';
     } catch (e) {
       return 'Error: Could not fetch business details';
     }

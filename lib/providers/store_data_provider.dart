@@ -2,8 +2,9 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:gem2/services/graphql_service.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TimeSlot {
   TimeOfDay? openTime;
@@ -60,9 +61,6 @@ StoreData({
 }
 
 class StoreDataProvider extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
   final StoreData _storeData = StoreData();
   StoreData get storeData => _storeData;
   Map<String, dynamic>? _business;
@@ -70,45 +68,14 @@ class StoreDataProvider extends ChangeNotifier {
   Map<String, dynamic>? get business => _business;
   String? get docId => _docId;
 
-  StreamSubscription<DocumentSnapshot>? _storeDataSubscription;
-
   StoreDataProvider() {
     _startListeningToStoreData();
   }
 
-  void _startListeningToStoreData() {
-    String? uid = _auth.currentUser?.uid;
-    if (uid == null) return;
-
-    try {
-      _storeDataSubscription = _firestore
-          .collection("bregisterbusiness")
-          .where('uid', isEqualTo: uid)
-          .limit(1)
-          .snapshots()
-          .listen(
-        (querySnapshot) {
-          if (querySnapshot.docs.isNotEmpty) {
-            DocumentSnapshot doc = querySnapshot.docs.first;
-            _docId = doc.id;
-            _business = doc.data() as Map<String, dynamic>?;
-
-            if (_business != null) {
-              _storeData.availability = _business!['availability'] ?? 'Available 24/7';
-              _storeData.storeTimes = _parseStoreTimes(_business!['storeTimes'] ?? {});
-              _storeData.selectedDays = _getSelectedDaysFromStoreTimes(_storeData.storeTimes);
-            }
-
-            notifyListeners();
-          }
-        },
-        onError: (error) {
-          print('Error in store data stream: $error');
-        },
-      ) as StreamSubscription<DocumentSnapshot<Object?>>?;
-    } catch (e) {
-      print('Error setting up store data stream: $e');
-    }
+  void _startListeningToStoreData() async {
+    // In GraphQL, we typically use subscriptions for real-time updates.
+    // For now, we'll just fetch the data once.
+    await fetchStoreData();
   }
 
   List<String> _getSelectedDaysFromStoreTimes(Map<String, List<TimeSlot>> storeTimes) {
@@ -172,25 +139,45 @@ class StoreDataProvider extends ChangeNotifier {
   }
 
    Future<void> fetchStoreData() async {
-    String? uid = _auth.currentUser?.uid;
+    final prefs = await SharedPreferences.getInstance();
+    final uid = prefs.getString('user_uid');
     if (uid == null) return;
 
-    try {
-      QuerySnapshot querySnapshot = await _firestore
-          .collection('bregisterbusiness')
-          .where('uid', isEqualTo: uid)
-          .limit(1)
-          .get();
+    final client = GraphQLService.initClient().value;
 
-      if (querySnapshot.docs.isNotEmpty) {
-        DocumentSnapshot doc = querySnapshot.docs.first;
-        _docId = doc.id;
-        _business = doc.data() as Map<String, dynamic>?;
+    const String getStoreQuery = r'''
+      query GetStore($userId: ID!) {
+        getStore(userId: $userId) {
+          id
+          name
+          description
+          # Add other fields like availability, storeTimes if available in schema
+        }
+      }
+    ''';
+
+    try {
+      final QueryResult result = await client.query(QueryOptions(
+        document: gql(getStoreQuery),
+        variables: {'userId': uid},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ));
+
+      if (result.hasException) {
+        print('Error fetching store data: ${result.exception.toString()}');
+        return;
+      }
+
+      final data = result.data?['getStore'];
+      if (data != null) {
+        _docId = data['id'];
+        _business = data;
         
         // Update _storeData based on the fetched business data
+        // Note: Store timings are now managed locally only, not fetched from backend
         if (_business != null) {
           _storeData.availability = _business!['availability'] ?? 'Available 24/7';
-          _storeData.storeTimes = _parseStoreTimes(_business!['storeTimes']);
+          // Store times are managed locally in the app, not stored in backend
         }
         
         notifyListeners();
@@ -202,27 +189,43 @@ class StoreDataProvider extends ChangeNotifier {
 
   // New method to save store data
   Future<void> saveStoreData() async {
-    String? uid = _auth.currentUser?.uid;
+    final prefs = await SharedPreferences.getInstance();
+    final uid = prefs.getString('user_uid');
     if (uid == null) return;
 
-    try {
-      // Convert store times to a format that can be stored in Firestore
-      Map<String, List<Map<String, dynamic>>> storeTimesMap = {};
-      _storeData.storeTimes.forEach((day, slots) {
-        if (slots.isNotEmpty) {
-          storeTimesMap[day] = slots.map((slot) => slot.toMap()).toList();
+    final client = GraphQLService.initClient().value;
+
+    // Convert store times to a format that can be stored
+    Map<String, List<Map<String, dynamic>>> storeTimesMap = {};
+    _storeData.storeTimes.forEach((day, slots) {
+      if (slots.isNotEmpty) {
+        storeTimesMap[day] = slots.map((slot) => slot.toMap()).toList();
+      }
+    });
+
+    // TODO: Implement updateStore mutation in backend
+    const String updateStoreMutation = r'''
+      mutation UpdateStore($input: StoreInput!) {
+        updateStore(input: $input) {
+          id
         }
-      });
+      }
+    ''';
 
-      Map<String, dynamic> data = {
-        'availability': _storeData.availability,
-        'storeTimes': storeTimesMap,
-        'selectedDays': _storeData.selectedDays,
-      };
+    try {
+      final QueryResult result = await client.mutate(MutationOptions(
+        document: gql(updateStoreMutation),
+        variables: {
+          'input': {
+            'availability': _storeData.availability,
+            // 'storeTimes': storeTimesMap, // Need to handle complex objects in GraphQL input
+            // 'selectedDays': _storeData.selectedDays,
+          }
+        },
+      ));
 
-      if (_docId != null) {
-        // Update existing document
-        await _firestore.collection('bregisterbusiness').doc(_docId).update(data);
+      if (result.hasException) {
+        print('Error saving store data: ${result.exception.toString()}');
       }
       notifyListeners();
     } catch (e) {
@@ -259,28 +262,14 @@ class StoreDataProvider extends ChangeNotifier {
       };
       _storeData.selectedDays = [];
       _business = null;
+      _docId = null;
 
-      // Clear data from Firestore
-      if (_docId != null) {
-        await _firestore.collection('bregisterbusiness').doc(_docId).delete();
-        _docId = null;
-      }
-
-      // Cancel the existing subscription
-      await _storeDataSubscription?.cancel();
-      _storeDataSubscription = null;
-
+      // TODO: Implement deleteStore mutation if needed
+      
       notifyListeners();
     } catch (e) {
       print('Error clearing store data: $e');
       rethrow;
     }
-  }
-
-  @override
-  void dispose() {
-    _storeDataSubscription?.cancel();
-    _storeDataSubscription = null;
-    super.dispose();
   }
 }

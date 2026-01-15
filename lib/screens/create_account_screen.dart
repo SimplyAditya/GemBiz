@@ -8,20 +8,18 @@ import 'package:flutter/services.dart';
 import 'package:gem2/screens/email_verification.dart';
 import 'package:gem2/screens/gst_entry_screen.dart';
 import 'package:latlong2/latlong.dart';
-import 'business_category_screen.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
+
 import 'store_timing_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:gem2/providers/store_data_provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-// ignore: depend_on_referenced_packages
-import 'package:path/path.dart' as path;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:gem2/providers/location_provider.dart';
 import 'package:gem2/screens/openstreetmap_screen.dart';
 import 'package:gem2/screens/catalouge_screen.dart'; // Add this import
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:gem2/providers/auth_provider.dart';
+import 'package:gem2/providers/auth_provider.dart' as auth_provider;
 import 'package:gem2/widgets/snackbar.dart';
+import 'package:gem2/services/graphql_service.dart';
 
 class CreateBusinessAccountScreen extends StatefulWidget {
   final String? docId;
@@ -40,14 +38,11 @@ class _CreateBusinessAccountScreenState
   String _gstNumber = '';
   String? _gstFilePath;
   String? _gstFileType;
-  String _businessCategory = '';
   String _storeTimings = '';
   String? _attachedImagePath;
   bool _isLoading = false;
   String? _existingLogoUrl; // Add this variable to store existing logo URL
 // Add this for GST file URL
-  final TextEditingController _businessCategoryController =
-      TextEditingController();
   final TextEditingController _businessNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController userNameController = TextEditingController();
@@ -66,10 +61,10 @@ class _CreateBusinessAccountScreenState
     if (widget.docId != null) {
       _loadExistingData();
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = Provider.of<AppAuthProvider>(context, listen: false);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
       setState(() {
-        _userEmail = authProvider.currentUser?.email;
+        _userEmail = prefs.getString('user_email');
       });
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -108,78 +103,85 @@ class _CreateBusinessAccountScreenState
   }
 
   Future<void> _loadExistingData() async {
+    if (widget.docId == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final uid = prefs.getString('user_uid');
+    if (uid == null) return;
+
+    final client = GraphQLService.initClient().value;
+
+    const String getBusinessQuery = r'''
+      query GetBusiness($uid: String!) {
+        getBusiness(uid: $uid) {
+          id
+          storeverified
+          category
+          name
+          description
+          email
+          website
+          gst {
+            id
+            gst_file_url
+            gst_file_type
+            gst_no
+          }
+          logo_image_url
+          mobile
+          address
+          user_type
+          user_name
+          uid
+        }
+      }
+    ''';
+
     try {
-      DocumentSnapshot doc = await FirebaseFirestore.instance
-          .collection('bregisterbusiness')
-          .doc(widget.docId)
-          .get();
+      final QueryResult result = await client.query(QueryOptions(
+        document: gql(getBusinessQuery),
+        variables: {'uid': uid},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ));
 
-      if (doc.exists) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        // Load existing data into the StoreDataProvider
-        final storeDataProvider =
-            Provider.of<StoreDataProvider>(context, listen: false);
+      if (result.hasException) {
+        print('Error fetching business data: ${result.exception.toString()}');
+        return;
+      }
 
-        String website = data['website'] as String? ?? '';
-        websiteController.text = website;
-        _actualWebsiteValue = website;
-
-        // Update store availability
-        if (data['availability'] != null) {
-          storeDataProvider.updateAvailability(data['availability']);
-        }
-
-        // Update store times
-        if (data['storeTimes'] != null) {
-          Map<String, List<TimeSlot>> parsedTimes = {};
-          Map<String, dynamic> storeTimes =
-              Map<String, dynamic>.from(data['storeTimes'] as Map);
-
-          storeTimes.forEach((day, slots) {
-            if (slots is List) {
-              parsedTimes[day] = (slots).map((slot) {
-                if (slot is Map) {
-                  return TimeSlot.fromMap(Map<String, dynamic>.from(slot));
-                }
-                return TimeSlot.fromMap(slot as Map<String, dynamic>);
-              }).toList();
-            }
-          });
-          storeDataProvider.updateStoreTimes(parsedTimes);
-        }
+      final businessData = result.data?['getBusiness'];
+      if (businessData != null) {
         setState(() {
-          _businessCategoryController.text = data['category'] as String? ?? '';
-          _businessCategory = data['category'] as String? ?? '';
-          _businessNameController.text = data['name'] as String? ?? '';
-          _descriptionController.text = data['description'] as String? ?? '';
-          _gstNumber =
-              (data['gst'] as Map<String, dynamic>?)?['gst_no'] as String? ??
-                  '';
-          _gstController.text =
-              (data['gst'] as Map<String, dynamic>?)?['gst_no'] as String? ??
-                  '';
-          _gstFileType = (data['gst']
-              as Map<String, dynamic>?)?['gst_file_type'] as String?;
-          _userEmail = data['email'] as String? ?? '';
-          websiteController.text = data['website'] as String? ?? '';
-          mobileController.text = data['mobile'] as String? ?? '';
-          userNameController.text = data['user_name'] as String? ?? '';
-          _storeTimings = data['store_timings'] as String? ?? '';
-          _businessRole = data['user_type'] as String? ?? 'owner';
-          _addressController.text = data['address'] as String? ?? '';
-          _existingLogoUrl =
-              data['logo_image_url'] as String?; // Store the existing logo URL
+          // Populate form fields with existing data
+          _businessNameController.text = businessData['name'] ?? '';
+          _descriptionController.text = businessData['description'] ?? '';
+          _userEmail = businessData['email'];
+          websiteController.text = businessData['website'] ?? '';
+          _existingLogoUrl = businessData['logo_image_url'];
+          mobileController.text = businessData['mobile'] ?? '';
+          userNameController.text = businessData['user_name'] ?? '';
+          _businessRole = businessData['user_type'] ?? 'owner';
+
+          // Handle GST data
+          if (businessData['gst'] != null) {
+            final gst = businessData['gst'];
+            _gstNumber = gst['gst_no'] ?? '';
+            _gstController.text = _gstNumber;
+            _gstFileType = gst['gst_file_type'];
+            // Note: gst_file_url would be used for existing file display
+          }
         });
-        final String savedAddress = data['address'] as String? ?? '';
-        if (savedAddress.isNotEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Provider.of<LocationProvider>(context, listen: false)
-                .setAddressOnly(savedAddress);
-          });
+
+        // Update location provider with existing address
+        final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+        if (businessData['address'] != null) {
+          // Note: This assumes address is a simple string. Adjust if it's more complex
+          // For now, just set the address without coordinates
+          locationProvider.setAddressOnly(businessData['address']);
         }
       }
     } catch (e) {
-      print('Error loading existing data: $e');
+      print('Error loading existing business data: $e');
     }
   }
 
@@ -207,8 +209,6 @@ class _CreateBusinessAccountScreenState
             children: [
               const SizedBox(height: 24),
               _buildBusinessLogoPicker(),
-              const SizedBox(height: 16),
-              _buildBusinessCategoryField(),
               const SizedBox(height: 16),
               _buildBusinessNameField(),
               const SizedBox(height: 16),
@@ -312,56 +312,13 @@ class _CreateBusinessAccountScreenState
   }
 
   Future<String> uploadImage(File imageFile) async {
-    try {
-      final storageRef = FirebaseStorage.instance.ref();
-      String fileName = path.basename(imageFile.path);
-      final fileRef = storageRef.child("business_logos/$fileName");
-      UploadTask uploadTask = fileRef.putFile(imageFile);
-      TaskSnapshot taskSnapshot = await uploadTask;
-      String downloadUrl = await taskSnapshot.ref.getDownloadURL();
-      return downloadUrl;
-    } catch (e) {
-      print("Error uploading image: $e");
-      return '';
-    }
+    // TODO: Implement image upload to backend
+    // For now, return a placeholder URL
+    print("Uploading image: ${imageFile.path}");
+    return 'https://example.com/placeholder-image.jpg';
   }
 
-  Widget _buildBusinessCategoryField() {
-    return _buildFieldWithArrow(
-        'Business Category*', _businessCategoryController, () async {
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const BusinessCategoryScreen()),
-      );
-      if (result != null && result is String) {
-        setState(() {
-          _businessCategory = result;
-          _businessCategoryController.text = result;
-        });
-      }
-    });
-  }
 
-  Widget _buildFieldWithArrow(
-      String label, TextEditingController controller, VoidCallback onTap) {
-    return TextFormField(
-      controller: controller,
-      readOnly: true,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: const Icon(Icons.receipt),
-        suffixIcon: const Icon(Icons.arrow_forward),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      onTap: onTap,
-      validator: (value) {
-        if (value!.isEmpty) return '$label is required';
-        return null;
-      },
-    );
-  }
 
   Widget _buildBusinessNameField() {
     return TextFormField(
@@ -711,16 +668,7 @@ class _CreateBusinessAccountScreenState
     );
   }
 
-  Map<String, dynamic> _prepareStoreTimesData(
-      StoreDataProvider storeDataProvider) {
-    return {
-      'storeTimes': storeDataProvider.storeData.storeTimes.map((key, value) {
-        return MapEntry(key, value.map((slot) => slot.toMap()).toList());
-      }),
-      'store_timings': storeDataProvider.getFormattedStoreTimes(),
-      'availability': storeDataProvider.storeData.availability,
-    };
-  }
+
 
   Widget _buildCreateAccountButton(StoreDataProvider storeDataProvider) {
     return SizedBox(
@@ -740,150 +688,76 @@ class _CreateBusinessAccountScreenState
                   return;
                 }
 
-                if (widget.docId != null) {
-                  final bool? proceed = await showDialog<bool>(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        backgroundColor: Colors.white,
-                        surfaceTintColor: Colors.black,
-                        title: const Text('Account Verification'),
-                        content: const Text(
-                            'Your account will be sent for verification again. It might take 3-5 business days to verify your business account.'),
-                        actions: <Widget>[
-                          TextButton(
-                            child: const Text(
-                              'Cancel',
-                              style: TextStyle(
-                                color: Colors.black,
-                              ),
-                            ),
-                            onPressed: () {
-                              Navigator.of(context).pop(false);
-                            },
-                          ),
-                          TextButton(
-                            child: const Text(
-                              'Proceed',
-                              style: TextStyle(color: Colors.black),
-                            ),
-                            onPressed: () {
-                              Navigator.of(context).pop(true);
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
-
-                  if (proceed != true) return;
-                }
                 setState(() {
                   _isLoading = true;
                 });
 
                 try {
-                  String? logoImageUrl;
+                  // Get providers
+                  final authProvider = Provider.of<auth_provider.AppAuthProvider>(context, listen: false);
+                  final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+
+                  // Prepare GST data
                   String? gstFileUrl;
-                  String? existingGstFileUrl;
-
-                  if (widget.docId != null) {
-                    existingGstFileUrl = await _getExistingGstFileUrl();
+                  if (_gstFilePath != null && _gstFilePath!.isNotEmpty) {
+                    gstFileUrl = await uploadFile(File(_gstFilePath!), 'gst');
+                  } else if (widget.docId != null) {
+                    gstFileUrl = await _getExistingGstFileUrl();
                   }
 
-                  if (_attachedImagePath != null) {
-                    logoImageUrl = await uploadFile(
-                        File(_attachedImagePath!), 'business_logos');
+                  // Prepare logo data
+                  String? logoImageUrl;
+                  if (_attachedImagePath != null && _attachedImagePath!.isNotEmpty) {
+                    logoImageUrl = await uploadImage(File(_attachedImagePath!));
+                  } else if (_existingLogoUrl != null) {
+                    logoImageUrl = _existingLogoUrl;
                   }
 
-                  if (_gstFilePath != null) {
-                    gstFileUrl =
-                        await uploadFile(File(_gstFilePath!), 'gst_files');
-                  }
-
-                  final locationProvider =
-                      Provider.of<LocationProvider>(context, listen: false);
-                  String? uid = FirebaseAuth.instance.currentUser?.uid;
-
-                  Map<String, dynamic> businessData = {
+                  // Prepare business data
+                  final businessData = {
                     'storeverified': false,
-                    'category': _businessCategory.isNotEmpty
-                        ? _businessCategory
-                        : _businessCategoryController.text,
+                    'category': '', // This should come from business category selection
                     'name': _businessNameController.text,
                     'description': _descriptionController.text,
-                    'storeTimes': storeDataProvider.storeData.storeTimes
-                        .map((key, value) {
-                      return MapEntry(
-                          key, value.map((slot) => slot.toMap()).toList());
-                    }),
-                    'store_timings': storeDataProvider.getFormattedStoreTimes(),
-                    ..._prepareStoreTimesData(storeDataProvider),
-                    'email': _userEmail,
+                    'email': _userEmail ?? '',
                     'website': websiteController.text,
                     'gst': {
-                      'gst_file_url': gstFileUrl ?? existingGstFileUrl ?? '',
-                      'gst_file_type': _gstFileType ??
-                          (widget.docId != null
-                              ? await _getExistingGstFileType()
-                              : ''),
+                      'gst_file_url': gstFileUrl ?? '',
+                      'gst_file_type': _gstFileType ?? (widget.docId != null ? await _getExistingGstFileType() : ''),
                       'gst_no': _gstNumber,
                     },
-                    'logo_image_url': logoImageUrl ?? _existingLogoUrl ?? '',
+                    'logo_image_url': logoImageUrl ?? '',
                     'mobile': mobileController.text,
                     'address': locationProvider.address ?? '',
                     'user_type': _businessRole,
                     'user_name': userNameController.text,
-                    'uid': uid,
+                    'uid': _userEmail ?? '', // Using email as UID for now
                   };
 
-                  if (widget.docId != null) {
-                    await FirebaseFirestore.instance
-                        .collection('bregisterbusiness')
-                        .doc(widget.docId)
-                        .update(businessData);
+                  // Call the addBusiness API
+                  final result = await authProvider.addBusiness(businessData);
 
-                    if (mounted) {
-                      showTopSnackBar(context, 'Account updated successfully');
-                      Navigator.pop(context);
-                    }
+                  if (result['success'] == true) {
+                    showTopSnackBar(context, 'Account created successfully');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EmailVerification(email: _userEmail ?? ''),
+                      ),
+                    );
                   } else {
-                    DocumentReference docRef = await FirebaseFirestore.instance
-                        .collection('bregisterbusiness')
-                        .add(businessData);
-
-                    if (mounted) {
-                      final storeProvider = Provider.of<StoreDataProvider>(
-                          context,
-                          listen: false);
-                      final appAuthProvider =
-                          Provider.of<AppAuthProvider>(context, listen: false);
-                      storeProvider.updateBusiness(businessData, docRef.id);
-                      await Future.wait([
-                        appAuthProvider.setLastScreen('catalogue'),
-                      ]);
-                      print("hello");
-                      const SnackBar(
-                        content: Text('Account created successfully'),
-                        backgroundColor: Colors.green,
-                      );
-                      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EmailVerification(email: _userEmail ?? ''),
-        ),      );
-                    }
+                    final errorMessage = result['error'] ?? 'Failed to create account';
+                    print('Business creation failed: $errorMessage');
+                    print('Business data sent: $businessData');
+                    showTopSnackBar(context, errorMessage);
                   }
-                } catch (e) {
-                  if (mounted) {
-                    showTopSnackBar(context, 'Error: $e');
-                  }
+                } catch (error) {
+                  print('Error creating business account: $error');
+                  showTopSnackBar(context, 'An error occurred. Please try again.');
                 } finally {
-                  if (mounted) {
-                    setState(() {
-                      _isLoading = false;
-                    });
-                  }
+                  setState(() {
+                    _isLoading = false;
+                  });
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -938,41 +812,20 @@ class _CreateBusinessAccountScreenState
   }
 
   Future<String?> _getExistingGstFileUrl() async {
-    if (widget.docId == null) return null;
-    final doc = await FirebaseFirestore.instance
-        .collection('bregisterbusiness')
-        .doc(widget.docId)
-        .get();
-    return (doc.data()?['gst'] as Map<String, dynamic>?)?['gst_file_url']
-        as String?;
+    // TODO: Implement GraphQL query to get existing GST file URL
+    return null;
   }
 
   Future<String?> _getExistingGstFileType() async {
-    if (widget.docId == null) return null;
-    final doc = await FirebaseFirestore.instance
-        .collection('bregisterbusiness')
-        .doc(widget.docId)
-        .get();
-    return (doc.data()?['gst'] as Map<String, dynamic>?)?['gst_file_type']
-        as String?;
+    // TODO: Implement GraphQL query to get existing GST file type
+    return null;
   }
 
   Future<String> uploadFile(File file, String folderName) async {
-    // Note: Firebase Storage may log warnings regarding App Check token retrieval.
-    // These warnings, such as "Error getting App Check token; using placeholder token",
-    // are expected under certain conditions (e.g., too many attempts) and do not affect a successful upload.
-    try {
-      final storageRef = FirebaseStorage.instance.ref();
-      String fileName = path.basename(file.path);
-      final fileRef = storageRef.child("$folderName/$fileName");
-      UploadTask uploadTask = fileRef.putFile(file);
-      TaskSnapshot taskSnapshot = await uploadTask;
-      String downloadUrl = await taskSnapshot.ref.getDownloadURL();
-      return downloadUrl;
-    } catch (e) {
-      print("Error uploading file: $e");
-      return '';
-    }
+    // TODO: Implement file upload to backend
+    // For now, return a placeholder URL
+    print("Uploading file: ${file.path} to $folderName");
+    return 'https://example.com/placeholder-file.jpg';
   }
 
   @override

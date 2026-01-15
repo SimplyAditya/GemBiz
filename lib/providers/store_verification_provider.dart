@@ -1,16 +1,16 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gem2/models/item_model.dart';
+import 'package:gem2/services/graphql_service.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class StoreVerificationProvider with ChangeNotifier {
   bool? _isVerified;
   ItemModel? _savedItem;
   ItemModel? _presentItem;
-  StreamSubscription<DocumentSnapshot>? _verificationSubscription;
 
   bool get isVerified => _isVerified ?? false;
   ItemModel? get savedItem => _savedItem;
@@ -26,84 +26,100 @@ class StoreVerificationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void initializeVerificationStatus() {
-    // Get current user UID
-    final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
+  void initializeVerificationStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentUserUid = prefs.getString('user_uid');
     
     if (currentUserUid == null) {
-      //print('No user logged in');
       return;
     }
 
-    //print('Initializing verification status for UID: $currentUserUid');
+    // In GraphQL, we would typically use a subscription or poll.
+    // For now, let's just fetch once.
+    await _checkVerificationStatus(currentUserUid);
+  }
 
-    // Cancel any existing subscription
-    _verificationSubscription?.cancel();
+  Future<void> _checkVerificationStatus(String uid) async {
+    final client = GraphQLService.initClient().value;
 
-    // Create new subscription that listens to the document where uid matches
-    _verificationSubscription = FirebaseFirestore.instance
-        .collection('bregisterbusiness')
-        .where('uid', isEqualTo: currentUserUid)
-        .snapshots()
-        .listen(
-      (QuerySnapshot snapshot) {
-        if (snapshot.docs.isNotEmpty) {
-          final doc = snapshot.docs.first;
-          final data = doc.data() as Map<String, dynamic>;
-          //print('Received document data: $data');
-          
-          final newValue = data['storeverified'] ?? false;
-          if (_isVerified != newValue) {
-            _isVerified = newValue;
-            //print('Verification status updated to: $_isVerified');
-            notifyListeners();
-          }
-        } else {
-          print('No document found for current user');
-          _isVerified = false;
+    const String getStoreVerificationQuery = r'''
+      query GetStoreVerification($userId: ID!) {
+        getStore(userId: $userId) {
+          id
+          storeverified # Assuming this field exists in your schema
+        }
+      }
+    ''';
+
+    try {
+      final QueryResult result = await client.query(QueryOptions(
+        document: gql(getStoreVerificationQuery),
+        variables: {'userId': uid},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ));
+
+      if (result.hasException) {
+        print('Error fetching verification status: ${result.exception.toString()}');
+        return;
+      }
+
+      final data = result.data?['getStore'];
+      if (data != null) {
+        final newValue = data['storeverified'] ?? false;
+        if (_isVerified != newValue) {
+          _isVerified = newValue;
           notifyListeners();
         }
-      },
-      onError: (error) {
-        print('Error in verification stream: $error');
-      },
-    ) as StreamSubscription<DocumentSnapshot<Object?>>?;
+      } else {
+        _isVerified = false;
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Error checking verification status: $e');
+    }
   }
 
   Future<void> toggleVerification() async {
-    final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
+    final prefs = await SharedPreferences.getInstance();
+    final currentUserUid = prefs.getString('user_uid');
     
     if (currentUserUid == null) {
-      //print('No user logged in');
       return;
     }
 
-    try {
-      // First, get the document reference
-      final QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('bregisterbusiness')
-          .where('uid', isEqualTo: currentUserUid)
-          .get();
+    // Only allow changing from false to true
+    if (_isVerified == true) return;
 
-      if (querySnapshot.docs.isNotEmpty) {
-        final docRef = querySnapshot.docs.first.reference;
-        
-        // Only allow changing from false to true
-        if (_isVerified == false) {
-          await docRef.update({'storeverified': true});
-          //print('Updated verification status to true');
+    final client = GraphQLService.initClient().value;
+
+    // TODO: Implement mutation to verify store
+    const String verifyStoreMutation = r'''
+      mutation VerifyStore($userId: ID!) {
+        verifyStore(userId: $userId) {
+          id
+          storeverified
         }
-      } else {
-        //print('No document found for current user');
+      }
+    ''';
+
+    try {
+      final QueryResult result = await client.mutate(MutationOptions(
+        document: gql(verifyStoreMutation),
+        variables: {'userId': currentUserUid},
+      ));
+
+      if (result.hasException) {
+        print('Error updating verification status: ${result.exception.toString()}');
+        return;
+      }
+
+      final data = result.data?['verifyStore'];
+      if (data != null) {
+        _isVerified = data['storeverified'];
+        notifyListeners();
       }
     } catch (e) {
-      //print('Error updating verification status: $e');
+      print('Error updating verification status: $e');
     }
-  }
-
-  @override
-  void dispose() {
-    _verificationSubscription?.cancel();
-    super.dispose();
   }
 }

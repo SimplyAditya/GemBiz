@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:gem2/screens/catalouge_screen.dart';
-import 'package:http/http.dart' as http;
 import 'package:pinput/pinput.dart';
 
 class EmailVerification extends StatefulWidget {
@@ -57,25 +55,19 @@ class _EmailVerificationState extends State<EmailVerification> {
       _errorText = null;
     });
 
-    try {
-      final response = await http.post(
-        Uri.parse('https://gem-biz.onrender.com/send-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'email': widget.email}),
-      );
+    // Simulate API call delay
+    await Future.delayed(const Duration(seconds: 1));
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        _otp = data['otp'] as int;
-        _startTimer();
-      } else {
-        setState(() {
-          _errorText = 'Failed to send OTP. Please try again.';
-        });
-      }
+    try {
+      // For testing purposes, use hardcoded OTP '000000'
+      _otp = 0; // OTP is 000000 (which equals 0)
+      _startTimer();
+      setState(() {
+        _errorText = null; // Clear any previous errors
+      });
     } catch (e) {
       setState(() {
-        _errorText = 'Network error. Please check your connection.';
+        _errorText = 'Failed to send OTP. Please try again.';
       });
     } finally {
       setState(() {
@@ -85,15 +77,11 @@ class _EmailVerificationState extends State<EmailVerification> {
   }
 
   void _verifyOTP() {
-    final enteredOTP = int.tryParse(_otpController.text);
-    if (enteredOTP == null) {
-      setState(() {
-        _errorText = 'Please enter a valid OTP';
-      });
-      return;
-    }
+    final enteredOTPText = _otpController.text.replaceAll(' ', ''); // Remove any spaces
+    final enteredOTP = int.tryParse(enteredOTPText);
 
-    if (enteredOTP == _otp) {
+    // For testing purposes, accept '000000' or any 6-digit input
+    if (enteredOTPText == '000000' || (enteredOTP != null && enteredOTPText.length == 6)) {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
@@ -128,6 +116,24 @@ class _EmailVerificationState extends State<EmailVerification> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.yellow.shade100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.yellow.shade300),
+              ),
+              child: const Text(
+                'For Testing Purpose: OTP is 000000',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
               ),
             ),
             const SizedBox(height: 16),

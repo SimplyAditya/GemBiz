@@ -1,7 +1,5 @@
 // ignore_for_file: avoid_print
 
-import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gem2/providers/auth_provider.dart' as app_auth;
@@ -16,14 +14,12 @@ import 'package:gem2/screens/splash_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'firebase_options.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:gem2/services/graphql_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await initHiveForFlutter();
 
   final prefs = await SharedPreferences.getInstance();
 
@@ -34,27 +30,25 @@ void main() async {
   final onboardingCompleted = prefs.getBool("onboarding") ?? false;
   final lastScreen = prefs.getString('lastScreen') ?? 'login';
 
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug,
-    appleProvider: AppleProvider.appAttest,
-  );
-
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => app_auth.AppAuthProvider()),
-        ChangeNotifierProvider(create: (_) => StoreDataProvider()),
-        ChangeNotifierProvider(create: (_) => StoreVerificationProvider()),
-        ChangeNotifierProvider(create: (_) => LocationProvider()),
-      ],
-      child: MyApp(
-        onboardingCompleted: onboardingCompleted,
-        lastScreen: lastScreen,
+    GraphQLProvider(
+      client: GraphQLService.initClient(),
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => app_auth.AppAuthProvider()),
+          ChangeNotifierProvider(create: (_) => StoreDataProvider()),
+          ChangeNotifierProvider(create: (_) => StoreVerificationProvider()),
+          ChangeNotifierProvider(create: (_) => LocationProvider()),
+        ],
+        child: MyApp(
+          onboardingCompleted: onboardingCompleted,
+          lastScreen: lastScreen,
+        ),
       ),
     ),
   );

@@ -1,6 +1,5 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gem2/screens/catalouge_screen.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,9 +10,9 @@ import 'package:gem2/models/item_model.dart';
 import 'package:country_picker/country_picker.dart';
 import 'dart:io';
 import 'package:gem2/utils/firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:gem2/utils/url_validator.dart';
 import 'package:gem2/widgets/snackbar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddItemScreen extends StatefulWidget {
   final String itemId;
@@ -39,8 +38,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
   List<Color> pickedColors = [];
   List<String> pickedSizes = [];
   bool hideItem = false;
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   final ImagePicker _picker = ImagePicker();
   final List<File?> _selectedImages = List<File?>.filled(4, null);
@@ -80,7 +77,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
   }
 
   final FirestoreService _firestoreService = FirestoreService();
-  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   bool _isSaving = false;
   bool _isLoading = true;
@@ -154,7 +150,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
     }
   }
 
-
   Future<List<String>> _uploadImages() async {
     List<String> imageUrls = [];
     
@@ -166,16 +161,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
     }
 
     // Then upload any new images
-    for (int i = 0; i < 4; i++) {
-      if (_selectedImages[i] != null) {
-        String fileName = '${DateTime.now().millisecondsSinceEpoch}_$i';
-        Reference ref = _storage.ref().child('item_images/$fileName');
-        UploadTask uploadTask = ref.putFile(_selectedImages[i]!);
-        TaskSnapshot taskSnapshot = await uploadTask;
-        String downloadUrl = await taskSnapshot.ref.getDownloadURL();
-        imageUrls.add(downloadUrl);
-      }
-    }
+    // TODO: Implement image upload to your backend or a cloud storage service
+    // For now, we'll just skip uploading new images as we removed Firebase Storage
+    // You should implement a proper image upload mechanism here.
     
     return imageUrls;
   }
@@ -250,7 +238,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
       
     List<String> imageUrls = await _uploadImages();
 
-    String? uid = _auth.currentUser?.uid;
+    final prefs = await SharedPreferences.getInstance();
+    String? uid = prefs.getString('user_uid');
       if (uid == null) {
         throw Exception('User not authenticated');
       }
